@@ -4,5 +4,4 @@ package.json
 logs
 *.exe
 *.txt
-.vscode
 .idea

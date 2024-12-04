@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "utils.h": "c",
+        "sqlite3.h": "c",
+        "direct.h": "c"
+    }
+}
