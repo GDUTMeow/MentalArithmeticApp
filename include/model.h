@@ -68,7 +68,7 @@ struct User
  * Returns:
  *  @permission Permission类型的结构体，里面包含了用户的权限
  */
-Permission getPermission(struct User user)
+struct Permission getPermission(struct User user)
 {
     struct Permission currentPermission;
     switch (user.role)  // 0为学生，1为老师
