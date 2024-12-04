@@ -1,7 +1,7 @@
 /*
 Copyright © GamerNoTitle 2024. All rights reserved.
 File name: initializer.c
-Author: 吴沛熹      ID: GamerNoTitle    Version: v1.0   Date:
+Author: 吴沛熹      ID: GamerNoTitle    Version: v1.0   Date: 2024/12/4
 Description:    本文件用于初始化整个程序，当这个程序第一次运行的时候，运行本初始化程序
 Others:         暂无
 History:        暂无
@@ -112,8 +112,8 @@ void initialize()
         {
             get_current_time(current_time, sizeof(current_time));
             fprintf(log_file, "%s [%s]: 文件夹 '%s' 创建成功。\n", current_time, LOGLEVEL_INFO, DB_FOLDER); // 创建成功的时候，写入日志
-            fprintf(log_file, "%s [%s]: 正在尝试初始化数据库。", current_time, LOGLEVEL_INFO);
-            fprintf(log_file, "%s [%s]: 正在初始化考试数据库。", current_time, LOGLEVEL_INFO);
+            fprintf(log_file, "%s [%s]: 正在尝试初始化数据库。\n", current_time, LOGLEVEL_INFO);
+            fprintf(log_file, "%s [%s]: 正在初始化考试数据库。\n", current_time, LOGLEVEL_INFO);
             char examination_init_command[] = "CREATE TABLE examinations(\n"
                                               "id TEXT PRIMARY KEY   NOT NULL,\n"         // 考试ID，UUID，唯一键
                                               "name TEXT             NOT NULL,\n"         // 考次名称
@@ -131,6 +131,7 @@ void initialize()
                                             "num2 INTEGER           NOT NULL\n"  // 第二个操作数字
                                             ");\n";
             initialize_database(EXAMINATION_DB, questions_init_command, log_file);
+            fprintf(log_file, "%s [%s]: 正在初始化成绩数据库。\n", current_time, LOGLEVEL_INFO);
             char scores_init_command[] = "CREATE TABLE scores(\n"
                                          "id TEXT PRIMARY KEY    NOT NULL,\n" // 成绩ID，UUID，唯一键
                                          "exam_id TEXT           NOT NULL,\n" // 考试ID，对应上面考次的UUID
@@ -139,6 +140,7 @@ void initialize()
                                          "expired_flag INTEGER   NOT NULL\n"  // 是否逾期作答，01分别代表否、是
                                          ");\n";
             initialize_database(SCORES_DB, scores_init_command, log_file);
+            fprintf(log_file, "%s [%s]: 正在初始化用户数据库。\n", current_time, LOGLEVEL_INFO);
             char users_init_command[] = "CREATE TABLE users(\n"
                                         "id TEXT PRIMARY KEY        NOT NULL,\n" // 用户ID，UUID，唯一键
                                         "username TEXT              NOT NULL,\n" // 用户名，范围为[a-zA-Z0-9]{3, 24}
