@@ -10,7 +10,7 @@ History:        暂无
         ID: GamerNoTitle
         Modification: [+] 新建了文件，并加入了头部文件注释，说明本头文件的功能
                       [+] 新建了函数initialize()，用于进行程序的初始化
-                      [+] 新建了函数initalize_database()用来进行数据库的初始化
+                      [+] 新建了函数initialize_database()用来进行数据库的初始化
                       [+] 添加了将日志保存到logs文件夹的特定文件的功能
  */
 
@@ -21,7 +21,7 @@ History:        暂无
 #include <errno.h>
 #include <windows.h>
 
-#include "../include/utils.h"  // 引入自己写的头文件utils.h，来调用里面已经写好的一些trick函数
+#include "../include/utils.h" // 引入自己写的头文件utils.h，来调用里面已经写好的一些trick函数
 
 #define ACCESS_EXIST_MODE 0 // 访问模式，0为是否存在，在_access函数中使用
 #define ACCESS_RW_MODE 6    // 访问模式，6代表是否有读写权限（读取为2，写入为4），在_access函数中使用
@@ -30,7 +30,7 @@ History:        暂无
 #define EXAMINATION_DB "db/examination.db"
 #define SCORES_DB "db/scores.db"
 #define USER_DB "db/user.db"
-#define LOG_FOLDER "logs" // 日志文件夹路径
+#define LOG_FOLDER "logs"                  // 日志文件夹路径
 #define LOG_FILE "logs/initialization.log" // 日志文件路径
 
 #define LOGLEVEL_INFO "INFO"
@@ -38,7 +38,7 @@ History:        暂无
 
 /**
  * @brief 数据库初始化函数，用于初始化不同的数据库
- * 
+ *
  * @param db_filename 数据库文件路径
  * @param command   数据库初始化命令，只运行一次，如果有多条命令需要调用多次这个函数
  * @param log_file  日志文件，用于保存初始化日志情况
@@ -68,17 +68,16 @@ void initialize_database(const char *db_filename, const char *command, FILE *log
     {
         get_current_time(current_time, sizeof(current_time));
         fprintf(log_file, "%s [%s]: 创建表失败：%s\n", current_time, LOGLEVEL_ERROR, err_msg);
-        sqlite3_free(err_msg);  // 运行失败后释放占用的内存
+        sqlite3_free(err_msg); // 运行失败后释放占用的内存
     }
     else
     {
         get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 对数据库 '%s' 初始化命令 %s 运行成功\n", current_time, LOGLEVEL_INFO, db_filename, command);
+        fprintf(log_file, "%s [%s]: 对数据库 '%s' 初始化命令 %s运行成功\n", current_time, LOGLEVEL_INFO, db_filename, command);
     }
 
     sqlite3_close(db); // 关闭数据库连接
 }
-
 
 /**
  * @brief 初始化函数，当程序运行时，执行初始化操作，且将日志保存到文件中
@@ -86,12 +85,12 @@ void initialize_database(const char *db_filename, const char *command, FILE *log
 void initialize()
 {
     // 检查是否存在 logs 文件夹
-    if (_access(LOG_FOLDER, ACCESS_EXIST_MODE) != 0) 
+    if (_access(LOG_FOLDER, ACCESS_EXIST_MODE) != 0)
     {
         if (_mkdir(LOG_FOLDER) != 0)
         {
             printf("无法创建 logs 文件夹：错误码 %d，%s\n", errno, strerror(errno));
-            return;  // 如果无法创建日志文件夹，返回
+            return; // 如果无法创建日志文件夹，返回
         }
     }
 
@@ -104,85 +103,53 @@ void initialize()
     }
 
     // 定义时间变量
-    char current_time[20];
+    char current_time[20] = {'\0'};
 
     // 尝试创建 db 文件夹
     if (_access(DB_FOLDER, ACCESS_EXIST_MODE) != 0) // 当 db 文件夹不存在时
     {
-        if (_mkdir(DB_FOLDER) == 0) // 创建文件夹
+        if (!_mkdir(DB_FOLDER)) // 创建文件夹
         {
             get_current_time(current_time, sizeof(current_time));
             fprintf(log_file, "%s [%s]: 文件夹 '%s' 创建成功。\n", current_time, LOGLEVEL_INFO, DB_FOLDER); // 创建成功的时候，写入日志
             fprintf(log_file, "%s [%s]: 正在尝试初始化数据库。", current_time, LOGLEVEL_INFO);
             fprintf(log_file, "%s [%s]: 正在初始化考试数据库。", current_time, LOGLEVEL_INFO);
             char examination_init_command[] = "CREATE TABLE examinations(\n"
-                             "id TEXT PRIMARY KEY   NOT NULL\n"
-                             "name TEXT             NOT NULL\n"
-                             "start_time INT        NOT NULL\n"
-                             "end_time INT          NOT NULL\n"
-                             "allow_answer_when_expired INT NOT NULL\n"
-                             "random_question INT   NOT NULL\n"
-                             ");";
-            get_current_time(current_time, sizeof(current_time));
-            fprintf(
-                log_file, 
-                "%s [%s]: 数据库 %s 的考次表 examinations 初始化成功！%s", 
-                current_time, 
-                LOGLEVEL_INFO, 
-                EXAMINATION_DB, 
-                examination_init_command
-            );
-            char questions_init_command[] = "CREATE TABLE questions(\n)"
-                                            "id TEXT PRIMARY KEY    NOT NULL\n"
-                                            "exam_id TEXT           NOT NULL\n"
-                                            "num1 INTEGER           NOT NULL\n"
-                                            "op INTEGER             NOT NULL\n"
-                                            "num2 INTEGER           NOT NULL\n"
-                                            ");";
-            get_current_time(current_time, sizeof(current_time));
-            fprintf(
-                log_file, 
-                "%s [%s]: 数据库 %s 的问题表 questions 初始化成功！%s", 
-                current_time, 
-                LOGLEVEL_INFO, 
-                EXAMINATION_DB, 
-                questions_init_command
-            );
-            char scores_init_command[] =    "CREATE TABLE scores(\n"
-                                            "id TEXT PRIMARY KEY    NOT NULL\n"
-                                            "exam_id TEXT           NOT NULL\n"
-                                            "user_id TEXT           NOT NULL\n"
-                                            "score INTEGER          NOT NULL\n"
-                                            "expired_flag INTEGER   NOT NULL\n"
-                                            ");";
-            get_current_time(current_time, sizeof(current_time));
-            fprintf(
-                log_file, 
-                "%s [%s]: 数据库 %s 的成绩表 scores 初始化成功！%s", 
-                current_time, 
-                LOGLEVEL_INFO, 
-                SCORES_DB, 
-                scores_init_command
-            );
+                                              "id TEXT PRIMARY KEY   NOT NULL,\n"         // 考试ID，UUID，唯一键
+                                              "name TEXT             NOT NULL,\n"         // 考次名称
+                                              "start_time INT        NOT NULL,\n"         // 考试的开始时间，时间戳
+                                              "end_time INT          NOT NULL,\n"         // 考试的结束时间，时间戳
+                                              "allow_answer_when_expired INT NOT NULL,\n" // 是否允许逾期作答
+                                              "random_question INT   NOT NULL\n"          // 是否开启问题乱序
+                                              ");\n";
+            initialize_database(EXAMINATION_DB, examination_init_command, log_file);
+            char questions_init_command[] = "CREATE TABLE questions(\n"
+                                            "id TEXT PRIMARY KEY    NOT NULL,\n" // 问题ID，UUID，唯一键
+                                            "exam_id TEXT           NOT NULL,\n" // 问题作用的考试ID，对应上面考次的UUID
+                                            "num1 INTEGER           NOT NULL,\n" // 第一个操作数字
+                                            "op INTEGER             NOT NULL,\n" // 运算符，0123对应加减乘除
+                                            "num2 INTEGER           NOT NULL\n"  // 第二个操作数字
+                                            ");\n";
+            initialize_database(EXAMINATION_DB, questions_init_command, log_file);
+            char scores_init_command[] = "CREATE TABLE scores(\n"
+                                         "id TEXT PRIMARY KEY    NOT NULL,\n" // 成绩ID，UUID，唯一键
+                                         "exam_id TEXT           NOT NULL,\n" // 考试ID，对应上面考次的UUID
+                                         "user_id TEXT           NOT NULL,\n" // 用户ID，成绩所对应的用户的UUID
+                                         "score INTEGER          NOT NULL,\n" // 成绩
+                                         "expired_flag INTEGER   NOT NULL\n"  // 是否逾期作答，01分别代表否、是
+                                         ");\n";
+            initialize_database(SCORES_DB, scores_init_command, log_file);
             char users_init_command[] = "CREATE TABLE users(\n"
-                                        "id TEXT PRIMARY KEY        NOT NULL\n"
-                                        "username TEXT PRIMARY KEY  NOT NULL\n"
-                                        "hashpass TEXT              NOT NULL\n"
-                                        "salt TEXT                  NOT NULL\n"
-                                        "role INTEGER               NOT NULL\n"
-                                        "name TEXT                  NOT NULL\n"
-                                        "class TEXT                 NOT NULL\n"
-                                        "number INTEGER             NOT NULL\n"
-                                        ");";
-            get_current_time(current_time, sizeof(current_time));
-            fprintf(
-                log_file, 
-                "%s [%s]: 数据库 %s 的用户表 users 初始化成功！%s", 
-                current_time, 
-                LOGLEVEL_INFO, 
-                USER_DB, 
-                users_init_command
-            );
+                                        "id TEXT PRIMARY KEY        NOT NULL,\n" // 用户ID，UUID，唯一键
+                                        "username TEXT              NOT NULL,\n" // 用户名，范围为[a-zA-Z0-9]{3, 24}
+                                        "hashpass TEXT              NOT NULL,\n" // 哈希后的密码
+                                        "salt TEXT                  NOT NULL,\n" // 盐
+                                        "role INTEGER               NOT NULL,\n" // 用户角色
+                                        "name TEXT                  NOT NULL,\n" // 用户姓名
+                                        "class TEXT,\n"                          // 用户班级
+                                        "number INTEGER             NOT NULL\n"  // 用户学号/工号
+                                        ");\n";
+            initialize_database(USER_DB, users_init_command, log_file);
         }
         else
         {
@@ -197,14 +164,15 @@ void initialize()
         get_current_time(current_time, sizeof(current_time));
         fprintf(log_file, "%s [%s]: 文件夹 '%s' 已存在。\n", current_time, LOGLEVEL_INFO, DB_FOLDER); // 文件夹已经存在时记录日志
     }
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 初始化完成！\n", current_time, LOGLEVEL_INFO); // 文件夹已经存在时记录日志
+    get_current_time(current_time, sizeof(current_time));
+    fprintf(log_file, "%s [%s]: 初始化完成！\n", current_time, LOGLEVEL_INFO); // 文件夹已经存在时记录日志
     // 关闭日志文件
-    fclose(log_file);}
+    fclose(log_file);
+}
 
 /**
  * @brief **仅用于调试**，用于调试初始化整个项目
- * 
+ *
  * @return int 程序运行结束状态
  */
 int main()

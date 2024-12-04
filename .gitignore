@@ -5,3 +5,4 @@ logs
 *.exe
 *.txt
 .vscode
+.idea
