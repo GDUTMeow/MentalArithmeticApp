@@ -23,16 +23,20 @@ History:        暂无
 
 #include "../include/utils.h" // 引入自己写的头文件utils.h，来调用里面已经写好的一些trick函数
 
+/*** 文件读取等级 ***/
 #define ACCESS_EXIST_MODE 0 // 访问模式，0为是否存在，在_access函数中使用
 #define ACCESS_RW_MODE 6    // 访问模式，6代表是否有读写权限（读取为2，写入为4），在_access函数中使用
 
-#define DB_FOLDER "db"
-#define EXAMINATION_DB "db/examination.db"
-#define SCORES_DB "db/scores.db"
-#define USER_DB "db/user.db"
+/*** 数据库部分 ***/
+#define DB_FOLDER "db"  // 数据库保存文件夹名
+#define EXAMINATION_DB "db/examination.db"  // 考试数据库
+#define SCORES_DB "db/scores.db"    // 成绩数据库
+#define USER_DB "db/user.db"    // 用户数据库
+
+/*** 日志部分 ***/
 #define LOG_FOLDER "logs"                  // 日志文件夹路径
 #define LOG_FILE "logs/initialization.log" // 日志文件路径
-
+// 日志等级
 #define LOGLEVEL_INFO "INFO"
 #define LOGLEVEL_ERROR "ERROR"
 
