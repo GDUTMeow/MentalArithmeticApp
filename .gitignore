@@ -5,3 +5,4 @@ logs
 *.exe
 *.txt
 .idea
+*.db
