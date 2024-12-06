@@ -94,7 +94,7 @@ void initialize()
         if (_mkdir(LOG_FOLDER) != 0)
         {
             printf("无法创建 logs 文件夹：错误码 %d，%s\n", errno, strerror(errno));
-            return; // 如果无法创建日志文件夹，返回
+            exit(1); // 如果无法创建日志文件夹，初始化失败，退出程序
         }
     }
 

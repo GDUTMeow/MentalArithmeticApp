@@ -24,6 +24,12 @@ History:        暂无
                         [+] 添加了问题模型Question及其附属模型QuestionData，以并采用链表节点格式
                         [+] 添加了计算函数calculate_result，函数内自带转换为float计算，并且采用了两位小数的比较方法
                         [*] 将函数的所有定义部分都移入同名的c文件
+    4.  Date: 2024/12/6
+        Author: 吴沛熹
+        ID: GamerNoTitle
+        Modification:   [+] 添加了新的数据库返回结构体 SqlResponseExam、SqlResponseQuestions、
+                            SqlResponseScores、SqlResponseUser，以便于在database.c的函数使用
+                            此四种结构体进行SQL查询返回数据的解析
  */
 
 #include <math.h>
@@ -102,3 +108,64 @@ struct Question
 int calculate_result(float num1, float num2, int op);
 int judge(float result, float user_input);
 /**************************** 问题模型部分结束 ****************************/
+
+/**************************** 数据库结果返回开始 ****************************/
+
+/**
+ * @brief 通过SQL查询考次表得到的结果，采用下面这个模型进行存储，便于后期进行数据的读取
+ *
+ */
+struct SqlResponseExam
+{
+    char id[37];                   // 考试的唯一ID，采用UUID4格式
+    char name[91];                 // 考试的名称，预留30个汉字的空位，加多一个位置放入\0
+    int start_time;                // 考试的开始时间
+    int end_time;                  // 考试的结束时间
+    int allow_answer_when_expired; // 是否允许逾期作答，只允许0（不允许）和1（允许）
+    int random_question;           // 是否开启随机题目顺序，只允许0（不允许）和1（允许）
+};
+
+/**
+ * @brief 通过SQL查询问题表得到的结果，采用下面这个模型进行存储，便于后期进行题目的装载
+ *
+ */
+struct SqlResponseQuestions
+{
+    char id[37];      // 题目的唯一ID，采用UUID4格式
+    char exam_id[37]; // 题目对应的考试ID，仍然是UUID4
+    float num1;       // 第一个操作数
+    int op;           // 运算符，0123对应加减乘除
+    float num2;       // 第二个操作数
+};
+
+/**
+ * @brief 通过SQL查询成绩表得到的结果，采用下面这个模型进行存储，便于后期进行成绩的引用
+ *
+ */
+struct SqlResponseScores
+{
+    char id[37];      // 成绩的唯一ID，采用UUID4格式
+    char exam_id[37]; // 成绩对应的考试ID，UUID4
+    char user_id[37]; // 成绩对应的用户ID，UUID4
+    float score;      // 用户的成绩
+    int expired_flag; // 用户是否逾期作答，只允许0（正常作答）和1（逾期作答）
+};
+
+/**
+ * @brief 通过SQL查询用户表得到的结果，采用下面这个模型进行存储，便于后期转换为User类
+ *
+ */
+struct SqlResponseUser
+{
+    char id[37];         // 用户的唯一ID，采用UUID4格式
+    char username[25];   // 用户自行设定的用户名，可用于登录，范围为[a-zA-Z0-9]{3,24}，只允许字母数字
+    char hashpass[129];  // 用户密码采用 sha512(salt + passwd) 计算后的值
+                         // sha512计算结果长度为128，所以定义129，保留\0的位置
+    char salt[17];       // 本程序中，盐采用16字节（128位）的规范，同时此长度不会占用过多的空间
+    int role;            // 用户角色
+    char name[46];       // 用户的真实姓名
+    char class_name[31]; // 用户的班级名字
+    unsigned int number; // 用户的学号/工号
+};
+
+/**************************** 数据库结果返回结束 ****************************/
