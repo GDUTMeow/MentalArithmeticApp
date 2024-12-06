@@ -105,8 +105,6 @@ struct Question
     struct Question *next_question; // 问题链的下一个问题
 };
 
-int calculate_result(float num1, float num2, int op);
-int judge(float result, float user_input);
 /**************************** 问题模型部分结束 ****************************/
 
 /**************************** 数据库结果返回开始 ****************************/

@@ -11,6 +11,7 @@
 - 添加了新的SQL返回数据模型`SqlResponseExam`、`SqlResponseQuestion`、`SqlResponseScore`、`SqlResponseUser`，用于处理sql查询返回的各种数据
 - 在README中添加了更新日志，并补全了之前的几次更新
 - 对SQL数据返回模型的单复数问题进行了纠正
+- 将错误归类的自定义函数放入新建的`app.c`中
 
 ### 2024/12/5
 
