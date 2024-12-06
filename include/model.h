@@ -129,7 +129,7 @@ struct SqlResponseExam
  * @brief 通过SQL查询问题表得到的结果，采用下面这个模型进行存储，便于后期进行题目的装载
  *
  */
-struct SqlResponseQuestions
+struct SqlResponseQuestion
 {
     char id[37];      // 题目的唯一ID，采用UUID4格式
     char exam_id[37]; // 题目对应的考试ID，仍然是UUID4
@@ -142,7 +142,7 @@ struct SqlResponseQuestions
  * @brief 通过SQL查询成绩表得到的结果，采用下面这个模型进行存储，便于后期进行成绩的引用
  *
  */
-struct SqlResponseScores
+struct SqlResponseScore
 {
     char id[37];      // 成绩的唯一ID，采用UUID4格式
     char exam_id[37]; // 成绩对应的考试ID，UUID4
