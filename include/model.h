@@ -58,7 +58,7 @@ struct Permission
  */
 struct User
 {
-    char id[37];                  // 以UUID4的格式：xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx，其长度为36
+    char id[37];                  // 以UUID4的格式：xxxxxxxx-xxxx-4xxx-xxxx-xxxxxxxxxxxx，其长度为36
                                   // 但是字符串后面还要塞\0，所以定义成37
     char username[25];            // 用户名，范围为[a-zA-Z0-9]{3,24}
     int role;                     // 用户类型标识符，0,1,2分别对应学生，老师
@@ -69,6 +69,7 @@ struct User
                                   // 而且学号只有正数，所以在4294967295的范围内能存下
                                   // 工号按照辅导员的五位来看，完全足够
     struct Permission permission; // 使用上面定义的结构体Permission来决定用户的权限
+    char belong_to[37];           // (仅学生) 属于哪一位老师，填入老师的UUID，可以为空
 };
 
 struct Permission get_permission(struct User user);
@@ -164,6 +165,7 @@ struct SqlResponseUser
     char name[46];       // 用户的真实姓名
     char class_name[31]; // 用户的班级名字
     unsigned int number; // 用户的学号/工号
+    char belong_to[37]; // 用户归属的老师（如果有）
 };
 
 /**************************** 数据库结果返回结束 ****************************/

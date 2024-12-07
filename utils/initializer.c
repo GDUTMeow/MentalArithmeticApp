@@ -12,6 +12,10 @@ History:        暂无
                       [+] 新建了函数initialize()，用于进行程序的初始化
                       [+] 新建了函数initialize_database()用来进行数据库的初始化
                       [+] 添加了将日志保存到logs文件夹的特定文件的功能
+    2.  Date: 2024/12/7
+        Author: 吴沛熹
+        ID: GamerNoTitle
+        Modification: [+] 对于数据库 user.db 中的表格 users，添加了一列belong_to，表示学生归属的老师，避免串班
  */
 
 #include "../lib/sqlite3.h"
@@ -28,10 +32,10 @@ History:        暂无
 #define ACCESS_RW_MODE 6    // 访问模式，6代表是否有读写权限（读取为2，写入为4），在_access函数中使用
 
 /*** 数据库部分 ***/
-#define DB_FOLDER "db"  // 数据库保存文件夹名
-#define EXAMINATION_DB "db/examination.db"  // 考试数据库
-#define SCORES_DB "db/scores.db"    // 成绩数据库
-#define USER_DB "db/user.db"    // 用户数据库
+#define DB_FOLDER "db"                     // 数据库保存文件夹名
+#define EXAMINATION_DB "db/examination.db" // 考试数据库
+#define SCORES_DB "db/scores.db"           // 成绩数据库
+#define USER_DB "db/user.db"               // 用户数据库
 
 /*** 日志部分 ***/
 #define LOG_FOLDER "logs"                  // 日志文件夹路径
@@ -153,7 +157,8 @@ void initialize()
                                         "role INTEGER               NOT NULL,\n" // 用户角色
                                         "name TEXT                  NOT NULL,\n" // 用户姓名
                                         "class TEXT,\n"                          // 用户班级
-                                        "number INTEGER             NOT NULL\n"  // 用户学号/工号
+                                        "number INTEGER             NOT NULL,\n" // 用户学号/工号
+                                        "belong_to TEXT\n"                       // (仅学生) 属于哪一位老师，填入老师的UUID
                                         ");\n";
             initialize_database(USER_DB, users_init_command, log_file);
         }
@@ -168,10 +173,11 @@ void initialize()
     else
     {
         get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 文件夹 '%s' 已存在。\n", current_time, LOGLEVEL_INFO, DB_FOLDER); // 文件夹已经存在时记录日志
+        fprintf(log_file, "%s [%s]: 文件夹 '%s' 已存在。\n", current_time, LOGLEVEL_INFO, DB_FOLDER);
     }
     get_current_time(current_time, sizeof(current_time));
-    fprintf(log_file, "%s [%s]: 初始化完成！\n", current_time, LOGLEVEL_INFO); // 文件夹已经存在时记录日志
+    fprintf(log_file, "%s [%s]: 初始化完成！\n", current_time, LOGLEVEL_INFO);  // 初始化完成提示
+    fprintf(log_file, "%s [%s]: https://github.com/GDUTMeow/MentalArithmeticApp 点个星星吧，お願い！\n", current_time, LOGLEVEL_INFO);
     // 关闭日志文件
     fclose(log_file);
 }

@@ -9,8 +9,12 @@
                 "-g",
                 "${file}",
                 "${workspaceFolder}\\lib\\sqlite3.c",   // 动态加载sqlite3库
+                "${workspaceFolder}\\include\\utils.c",   // 动态加载函数库utils
+                "${workspaceFolder}\\include\\database.c",   // 动态加载函数库database
+                "${workspaceFolder}\\include\\app.c",   // 动态加载函数库app
+                "${workspaceFolder}\\include\\model.c",   // 动态加载模型库model
                 "-o",
-                "${fileDirname}\\${fileBasenameNoExtension}.exe"
+                "${workspaceFolder}\\${fileBasenameNoExtension}.exe"
             ],
             "options": {
                 "cwd": "${workspaceFolder}"

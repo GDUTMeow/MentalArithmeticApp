@@ -6,6 +6,13 @@
 
 ## 更新日志
 
+### 2024/12/7
+
+- 完成了数据库查询函数`query_exam_info`, `query_question_info`, `query_score_info`, `query_exams_info_all`, `query_user_info_all`, `query_questions_info_all`, `query_scores_info_all`
+- 修复了部分文件中缺失头文件引用的问题
+- 对自己编写的头文件在编译过程中添加参数，使其动态加载
+- 在初始化程序中，对 user.db 数据库的 users 表格添加了新的列`belong_to`，表示学生归属的老师，避免串班
+
 ### 2024/12/6
 
 - 添加了新的SQL返回数据模型`SqlResponseExam`、`SqlResponseQuestion`、`SqlResponseScore`、`SqlResponseUser`，用于处理sql查询返回的各种数据
