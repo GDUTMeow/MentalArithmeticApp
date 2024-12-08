@@ -710,7 +710,7 @@ int query_users_info_all(const char *name, const char *class_name, int role, con
     }
     else
     {
-        log_message(LOGLEVEL_INFO, "没有找到符合条件的用户信息：%s", cmd);
+        log_message(LOGLEVEL_INFO, "没有找到符合条件的用户信息", cmd);
     }
 
     // 清理和关闭数据库
