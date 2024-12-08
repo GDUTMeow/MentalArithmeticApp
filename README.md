@@ -6,6 +6,12 @@
 
 ## 更新日志
 
+### 2024/12/8
+
+- 完成了数据库的增删改函数，并添加了测试用例
+- 将日志写入功能更改为一个函数，避免重复造轮子
+- 将数据库examination.db内的`questions`表中的两个数字改为采用REAL类型进行存储
+
 ### 2024/12/7
 
 - 完成了数据库查询函数`query_exam_info`, `query_question_info`, `query_score_info`, `query_exams_info_all`, `query_user_info_all`, `query_questions_info_all`, `query_scores_info_all`
