@@ -10,9 +10,25 @@ History:        暂无
         ID: GamerNoTitle
         Modification: [+] 新建了文件，将 utils.h 中的函数挪入本文件
                       [+] 加入了 get_current_time 函数，用于获取当前时间并保存为 YYYY-MM-DD HH:mm:SS 的格式
+    2.  Date: 2024/12/8
+        Author: 吴沛熹
+        ID: GamerNoTitle
+        Modification: [+] 添加了日志记录函数，避免重复造轮子
  */
 
+#include <stdarg.h>
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
 #include "utils.h"
+
+/*** 日志等级 ***/
+#define LOGLEVEL_ERROR "ERROR"
+#define LOGLEVEL_INFO "INFO"
+
+/*** 日志部分 ***/
+#define LOG_FOLDER "logs"          // 日志文件夹路径
+#define LOG_FILE "logs/latest.log" // 日志文件路径
 
 /**
  * @brief 获取当前时间，格式化为 "YYYY-MM-DD HH:mm:SS"
@@ -30,4 +46,32 @@ void get_current_time(char *buffer, size_t size)
 
     // 将时间格式化为 "YYYY-MM-DD HH:mm:SS" 格式并存储到 buffer 中
     strftime(buffer, size, "%Y-%m-%d %H:%M:%S", &tm_info);  // 按照 "YYYY-MM-DD HH:mm:SS" 的格式保存到buffer，返回到传入的字符串
+}
+
+/**
+ * @brief 记录日志信息到日志文件
+ *
+ * @param level 日志级别（例如：LOGLEVEL_ERROR, LOGLEVEL_INFO）
+ * @param format 格式化字符串，类似printf
+ * @param ... 变长参数
+ */
+void log_message(const char *level, const char *format, ...) {
+    FILE *log_file = fopen(LOG_FILE, "a");
+    if (log_file == NULL) {
+        printf("无法打开日志文件：%s\n", strerror(errno));
+        return;
+    }
+
+    char current_time[20];
+    get_current_time(current_time, sizeof(current_time));
+
+    fprintf(log_file, "%s [%s]: ", current_time, level);
+
+    va_list args;
+    va_start(args, format);
+    vfprintf(log_file, format, args);
+    va_end(args);
+
+    fprintf(log_file, "\n");
+    fclose(log_file);
 }

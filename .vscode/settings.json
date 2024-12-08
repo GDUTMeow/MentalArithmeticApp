@@ -4,6 +4,7 @@
         "sqlite3.h": "c",
         "direct.h": "c",
         "model.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "stdarg.h": "c"
     }
 }

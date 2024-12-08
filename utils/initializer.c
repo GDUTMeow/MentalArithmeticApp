@@ -5,17 +5,22 @@ Author: 吴沛熹      ID: GamerNoTitle    Version: v1.0   Date: 2024/12/4
 Description:    本文件用于初始化整个程序，当这个程序第一次运行的时候，运行本初始化程序
 Others:         暂无
 History:        暂无
-    1.  Date: 2024/12/4
+    1.  Date:   2024/12/4
         Author: 吴沛熹
         ID: GamerNoTitle
         Modification: [+] 新建了文件，并加入了头部文件注释，说明本头文件的功能
                       [+] 新建了函数initialize()，用于进行程序的初始化
                       [+] 新建了函数initialize_database()用来进行数据库的初始化
                       [+] 添加了将日志保存到logs文件夹的特定文件的功能
-    2.  Date: 2024/12/7
+    2.  Date:   2024/12/7
         Author: 吴沛熹
         ID: GamerNoTitle
         Modification: [+] 对于数据库 user.db 中的表格 users，添加了一列belong_to，表示学生归属的老师，避免串班
+    3.  Date:   2024/12/8
+        Author: 吴沛熹
+        ID: GamerNoTitle
+        Modification: [+] 添加了对log/latest.log文件的新建，以防后面写入日志的时候文件不存在
+                      [*] 对 questions 数据库的 num1 和 num2 列采用REAL类型存储
  */
 
 #include "../lib/sqlite3.h"
@@ -34,12 +39,13 @@ History:        暂无
 /*** 数据库部分 ***/
 #define DB_FOLDER "db"                     // 数据库保存文件夹名
 #define EXAMINATION_DB "db/examination.db" // 考试数据库
-#define SCORES_DB "db/scores.db"           // 成绩数据库
+#define SCORES_DB "db/score.db"            // 成绩数据库
 #define USER_DB "db/user.db"               // 用户数据库
 
 /*** 日志部分 ***/
 #define LOG_FOLDER "logs"                  // 日志文件夹路径
 #define LOG_FILE "logs/initialization.log" // 日志文件路径
+
 // 日志等级
 #define LOGLEVEL_INFO "INFO"
 #define LOGLEVEL_ERROR "ERROR"
@@ -110,6 +116,14 @@ void initialize()
         return;
     }
 
+    // 打开日志文件，如果不存在则创建
+    FILE *latest_log_file = fopen("logs/latest.log", "a"); // 创建一个latest.log文件
+    if (latest_log_file == NULL)
+    {
+        printf("无法打开日志文件：%s\n", strerror(errno));
+        return;
+    }
+
     // 定义时间变量
     char current_time[20] = {'\0'};
 
@@ -134,9 +148,9 @@ void initialize()
             char questions_init_command[] = "CREATE TABLE questions(\n"
                                             "id TEXT PRIMARY KEY    NOT NULL,\n" // 问题ID，UUID，唯一键
                                             "exam_id TEXT           NOT NULL,\n" // 问题作用的考试ID，对应上面考次的UUID
-                                            "num1 INTEGER           NOT NULL,\n" // 第一个操作数字
+                                            "num1 REAL           NOT NULL,\n"    // 第一个操作数字
                                             "op INTEGER             NOT NULL,\n" // 运算符，0123对应加减乘除
-                                            "num2 INTEGER           NOT NULL\n"  // 第二个操作数字
+                                            "num2 REAL           NOT NULL\n"     // 第二个操作数字
                                             ");\n";
             initialize_database(EXAMINATION_DB, questions_init_command, log_file);
             fprintf(log_file, "%s [%s]: 正在初始化成绩数据库。\n", current_time, LOGLEVEL_INFO);
@@ -156,7 +170,7 @@ void initialize()
                                         "salt TEXT                  NOT NULL,\n" // 盐
                                         "role INTEGER               NOT NULL,\n" // 用户角色
                                         "name TEXT                  NOT NULL,\n" // 用户姓名
-                                        "class TEXT,\n"                          // 用户班级
+                                        "class_name TEXT,\n"                     // 用户班级
                                         "number INTEGER             NOT NULL,\n" // 用户学号/工号
                                         "belong_to TEXT\n"                       // (仅学生) 属于哪一位老师，填入老师的UUID
                                         ");\n";
@@ -176,7 +190,7 @@ void initialize()
         fprintf(log_file, "%s [%s]: 文件夹 '%s' 已存在。\n", current_time, LOGLEVEL_INFO, DB_FOLDER);
     }
     get_current_time(current_time, sizeof(current_time));
-    fprintf(log_file, "%s [%s]: 初始化完成！\n", current_time, LOGLEVEL_INFO);  // 初始化完成提示
+    fprintf(log_file, "%s [%s]: 初始化完成！\n", current_time, LOGLEVEL_INFO); // 初始化完成提示
     fprintf(log_file, "%s [%s]: https://github.com/GDUTMeow/MentalArithmeticApp 点个星星吧，お願い！\n", current_time, LOGLEVEL_INFO);
     // 关闭日志文件
     fclose(log_file);

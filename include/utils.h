@@ -15,3 +15,4 @@ History:        暂无
 #include <time.h>  // 用于获取当前时间
 
 void get_current_time(char *buffer, size_t size);
+void log_message(const char *level, const char *format, ...);
