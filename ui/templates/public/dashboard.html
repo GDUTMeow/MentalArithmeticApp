@@ -1,0 +1,273 @@
+<head>
+    {% include "public/base.html" %}
+    <style>
+        .nav-link {
+            color: #fff;
+        }
+        /* 封面样式 */
+        
+        #introCarousel,
+        .carousel-inner,
+        .carousel-item,
+        .carousel-item.active {
+            height: 100vh;
+        }
+        
+        .carousel-item:nth-child(1) {
+            background-image: url("{{ url_for('static', filename='img/math.webp' )}}");
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center center;
+        }
+        
+        @media (min-width: 100%) {
+            #introCarousel {
+                margin-top: -58.59px;
+            }
+            #introCarousel,
+            .carousel-inner,
+            .carousel-item,
+            .carousel-item.active {
+                height: 50vh;
+            }
+        }
+        
+        .navbar .nav-link {
+            color: #fff !important;
+        }
+        
+        .dismiss-cover-btn:hover {
+            background-color: #8481d4;
+        }
+        
+        #cover-container {
+            opacity: 1;
+            transition: opacity 1s ease;
+        }
+        /* 定义淡出动画 */
+        
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+        /* 定义淡入动画 */
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        /* 应用淡出动画的类 */
+        
+        .fade-out {
+            animation: fadeOut 1s forwards;
+        }
+        /* 应用淡入动画的类 */
+        
+        .fade-in {
+            animation: fadeIn 1s forwards;
+        }
+        /* 定义从上往下滑出的动画 */
+        
+        @keyframes slideOutDown {
+            from {
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(100%);
+            }
+        }
+        /* 应用滑出动画的类 */
+        
+        .slide-out-down {
+            animation: slideOutDown 1s forwards ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 顶栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background-color: #8481d4">
+        <div class="container-fluid">
+            <!-- 顶栏图标 -->
+            <a class="navbar-brand" href="#"><img src="{{ url_for('static', filename='img/logo.png' )}}" height=30px style="padding-left: 10px;"></a>
+
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <!-- 顶栏导航 -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- 学生部分 -->
+                    <div class="student-nav-items" style="display: flex;" id="student-nav-items">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="stu-go-to-exam">前往测试</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="stu-check-self-scores">查看成绩</a>
+                        </li>
+                    </div>
+
+                    <!-- 老师部分 -->
+                    <div class="teacher-nav-items" style="display: flex;" id="teacher-nav-items">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="tea-personal-information">考试管理</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="tea-personal-information">学生管理</a>
+                        </li>
+                    </div>
+                    <!-- 通用部分 -->
+                    <div class="general-nav-items" style="display: flex;">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="personal-information">个人信息</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" id="personal-information">退出登录</a>
+                        </li>
+                    </div>
+            </div>
+        </div>
+    </nav>
+    <!-- 顶栏结束 -->
+
+    <!-- 主页Cover -->
+    <div class="col-12" id="cover-container">
+        <div id="introCarousel" class="carousel slide carousel-fade shadow-2-strong pointer-event" data-mdb-carousel-init="" data-mdb-carousel-initialized="true">
+
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <div class="mask" style="
+                            background: linear-gradient(
+                            45deg,
+                            #1decc5b3,
+                            #5b0ed6b3 100%
+                            );
+                            ">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <div class="text-white text-center" data-mdb-theme="dark">
+                                <h2>口算速算</h2>
+                                <hr>
+                                <p>欢迎回来！{{ user and user.name or "田中浩二" }} ({{ user and user.name or "1145141919810" }})
+                                </p>
+                                <a type="button" class="btn btn-outline-light btn-lg m-2 dismiss-cover-btn" href="#" role="button" id="dismiss-cover-btn" onclick="dismiss_cover()">点击进入</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 考试入口 -->
+    <div class="container" id="exam-entrance" style="padding-top: 100px; display: none; opacity: 0; transition: opacity 1s ease;">
+        <div class="row gx-1">
+            <div class="col-12">
+                <div class="card text-center border border-primary shadow-0">
+                    <div class="card-body">
+                        <h5 class="card-title" style="padding-bottom: 10px">{{ exam and exam.metadata and exam.metadata.title or "这是一场不存在的考试" }}
+                        </h5>
+                        <p class="card-text">
+                            {{ exam and exam.metadata and exam.metadata.description or "description" }}
+                        </p>
+                        <button type="button" class="btn btn-primary enter-exam">进入考试</button>
+                    </div>
+                    <div class="card-footer">剩余时间：{{ exam.metadata.time_left|default(114514) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 当文档加载完成后，运行下面的函数
+        document.addEventListener("DOMContentLoaded", function() {
+            adjust_elements(); // 调整考试框的位置
+            hide_nav_items(); // 隐藏不属于当前用户角色相关的顶栏链接
+        })
+
+        /**
+         * 调整考试入口元素的位置，使其根据窗口高度动态设置顶部填充
+         */
+        function adjust_elements() {
+            const exam_entrance = document.getElementById("exam-entrance");
+            const height = window.innerHeight;
+            const width = window.innerWidth;
+            exam_entrance.style.paddingTop = height * 0.3 + "px"; // 设置顶部填充为窗口高度的30%
+        }
+
+        /**
+         * 根据给定的名称获取对应的 Cookie 值
+         * @param {string} cname - Cookie 的名称
+         * @returns {string} - Cookie 的值，如果不存在则返回空字符串
+         */
+        function getCookie(cname) {
+            var name = cname + "=";
+            var ca = document.cookie.split(';');
+            for (var i = 0; i < ca.length; i++) {
+                var c = ca[i].trim();
+                if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
+            }
+            return "";
+        }
+
+        /**
+         * 隐藏与当前用户角色不相关的导航项
+         * 通过解析 Cookie 中的 token 获取用户角色，并根据角色显示或隐藏相应的导航项
+         */
+        function hide_nav_items() {
+            var token = getCookie("token");
+            var data_from_token = "";
+            var data_section_start_flag = 0;
+            // 解析 JWT token 获取 payload 部分
+            for (var i = 0; i < token.length; i++) {
+                var c = token[i].trim();
+                if (c == '.') {
+                    data_section_start_flag = !data_section_start_flag;
+                } else if (data_section_start_flag) {
+                    data_from_token = data_from_token + token[i];
+                }
+            }
+            // 解码并解析 JSON 数据
+            var data = JSON.parse(Base64.decode(data_from_token));
+            window.role = data.role; // 将角色存储在全局变量中
+            if (data.role == 1) {
+                const stu_nav_items = document.getElementById("student-nav-items");
+                stu_nav_items.style.display = "none"; // 如果是学生角色，隐藏教师导航项
+            } else if (data.role == 0) {
+                const tea_nav_items = document.getElementById("teacher-nav-items");
+                tea_nav_items.style.display = "none"; // 如果是教师角色，隐藏学生导航项
+            }
+        }
+
+        /**
+         * 处理封面消失的逻辑，包括淡出动画和显示考试入口
+         */
+        function dismiss_cover() {
+            const cover = document.getElementById("cover-container");
+            if (window.role == 0) { // 如果用户角色为教师
+                var element = document.getElementById("exam-entrance");
+            }
+            // 添加淡出动画类
+            cover.classList.add('fade-out');
+
+            // 监听淡出动画结束事件
+            cover.addEventListener('animationend', function handler() {
+                // 隐藏覆盖层
+                cover.style.display = 'none';
+
+                // 显示考试入口
+                element.style.display = 'flex';
+
+                // 添加淡入动画类
+                element.classList.add('fade-in');
+
+                // 移除事件监听器，避免重复触发
+                cover.removeEventListener('animationend', handler);
+            });
+        }
+    </script>
+</body>

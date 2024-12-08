@@ -1,0 +1,93 @@
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mdb.min.css' )}}" />
+    <script type="text/javascript" src="{{ url_for('static', filename='js/mdb.umd.min.js' )}}"></script>
+    <style>
+        html,
+        body,
+        .intro {
+            height: 100%;
+        }
+        
+        @media (min-width: 550px) and (max-width: 750px) {
+            html,
+            body,
+            .intro {
+                height: 550px;
+            }
+        }
+        
+        @media (min-width: 800px) and (max-width: 850px) {
+            html,
+            body,
+            .intro {
+                height: 550px;
+            }
+        }
+        
+        a.link {
+            font-size: 0.875rem;
+            color: #a0c4ff;
+        }
+        
+        a.link:hover,
+        a.link:active {
+            color: #a0c4ff;
+        }
+    </style>
+</head>
+
+<body>
+    <section class="intro">
+        <div class="bg-image h-100">
+            <div class="mask d-flex align-items-center h-100" style="background-color: #f3f2f2">
+                <div class="container">
+                    <div class="row d-flex justify-content-center align-items-center">
+                        <div class="col-12 col-lg-9 col-xl-8">
+                            <div class="card" style="border-radius: 1rem">
+                                <div class="row g-0">
+                                    <div class="col-md-4 d-none d-md-block">
+                                        <img src="{{ url_for('static', filename='img/math.webp' )}}" alt="login form" class="img-fluid" style="
+                        border-top-left-radius: 1rem;
+                        border-bottom-left-radius: 1rem;
+                        height: 100%;
+                        width: auto;
+                        object-fit: cover;" />
+                                    </div>
+                                    <div class="col-md-8 d-flex align-items-center">
+                                        <div class="card-body py-5 px-4 p-md-5">
+                                            <form action="">
+                                                <h4 class="fw-bold mb-4" style="color: #98b4e2">
+                                                    登录你的账户
+                                                </h4>
+                                                <p class="mb-4" style="color: #7f9ccc">
+                                                    你需要输入你的用户名和密码来登录
+                                                </p>
+
+                                                <div class="form-outline mb-4">
+                                                    <input type="text" id="username" class="form-control" />
+                                                    <label class="form-label" for="username">用户名</label>
+                                                </div>
+
+                                                <div class="form-outline mb-4">
+                                                    <input type="password" id="password" class="form-control" />
+                                                    <label class="form-label" for="password">密码</label>
+                                                </div>
+
+                                                <div class="d-flex justify-content-end pt-1 mb-4">
+                                                    <button class="btn btn-primary btn-rounded" type="button" style="background-color: #7f9ccc">
+                                                        登录
+                                                    </button>
+                                                </div>
+                                                <hr />
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>

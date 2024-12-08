@@ -3,7 +3,7 @@ package-lock.json
 package.json
 logs
 *.exe
-*.txt
 .idea
 *.db
 DEBUG*.py
+venv
