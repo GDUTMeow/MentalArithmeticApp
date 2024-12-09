@@ -89,6 +89,23 @@
         .slide-out-down {
             animation: slideOutDown 1s forwards ease-in-out;
         }
+        
+        .btn-color-dashboard-primary {
+            background-color: #8481d4;
+            color: #fff;
+        }
+        
+        .btn-color-dashboard-primary:hover {
+            background-color: #81bdd4;
+        }
+        /* ::-webkit-datetime-edit-text,
+         ::-webkit-datetime-edit-year-field,
+         ::-webkit-datetime-edit-month-field,
+         ::-webkit-datetime-edit-day-field,
+         ::-webkit-datetime-edit-hour-field,
+         ::-webkit-datetime-edit-minute-field {
+            color: transparent;
+        } */
     </style>
 </head>
 
@@ -105,17 +122,17 @@
                     <!-- 学生部分 -->
                     <div class="student-nav-items" style="display: flex;" id="student-nav-items">
                         <li class="nav-item">
-                            <a class="nav-link" href="#" id="stu-go-to-exam">前往测试</a>
+                            <a class="nav-link" href="#" id="stu-go-to-exam" onclick="hide_others('exam-entrance')">前往测试</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" id="stu-check-self-scores">查看成绩</a>
+                            <a class="nav-link" href="#" id="stu-check-self-scores" onclick="hide_others('scores-list-student')">查看成绩</a>
                         </li>
                     </div>
 
                     <!-- 老师部分 -->
                     <div class="teacher-nav-items" style="display: flex;" id="teacher-nav-items">
                         <li class="nav-item">
-                            <a class="nav-link" href="#" id="tea-personal-information">考试管理</a>
+                            <a class="nav-link" href="#" id="tea-personal-information" onclick="hide_others('exam-management-teacher')">考试管理</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#" id="tea-personal-information">学生管理</a>
@@ -164,7 +181,7 @@
     </div>
 
     <!-- 考试入口 -->
-    <div class="container" id="exam-entrance" style="padding-top: 100px; display: none; opacity: 0; transition: opacity 1s ease;">
+    <div class="container" id="exam-entrance" style="display: none">
         <div class="row gx-1">
             <div class="col-12">
                 <div class="card text-center border border-primary shadow-0">
@@ -174,9 +191,212 @@
                         <p class="card-text">
                             {{ exam and exam.metadata and exam.metadata.description or "description" }}
                         </p>
-                        <button type="button" class="btn btn-primary enter-exam">进入考试</button>
+                        <button type="button" class="btn btn-primary enter-exam btn-color-dashboard-primary">进入考试</button>
                     </div>
                     <div class="card-footer">剩余时间：{{ exam.metadata.time_left|default(114514) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成绩表单 -->
+    <div class="container" id="scores-list-student" style="display: none">
+        <div class="card">
+            <div class="card-body">
+                <div class="row ">
+
+                    <div class="col-md-4">
+                        <div class="card text-center ">
+                            <div class="card-header">我的考试成绩</div>
+                            <div class="card-body">
+                                <h5 class="card-title">{{ user and user.name or "田中浩二" }}</h5>
+                                <p class="card-text">
+                                    学号：{{ user and user.name or "1145141919810" }}<br> 共 {{ (score and score.score_list|length)| default(3) }} 场考试
+                                </p>
+
+                                <!-- <button type="button" class="btn btn-primary">Button</button> -->
+                            </div>
+                            <div class="card-footer">平均分：
+                                <score id="average-score">{{ score and score.average or 114514 }}</score>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-8">
+
+                        <div class="table-responsive" style="box-shadow: 2px 15px -3px rgba(var(--mdb-box-shadow-color-rgb), 0.07), 0 10px 20px -2px rgba(var(--mdb-box-shadow-color-rgb), 0.04)">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">#</th>
+                                        <th scope="col">考试名称</th>
+                                        <th scope="col">考试成绩</th>
+                                        <th scope="col">逾期作答</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% set score = score|default({"score_list": [{"name": "测试考试", "score": 114514, "expired_flag": 1}]}) %} {% for item in score.score_list %}
+                                    <tr>
+                                        <th scope="row">{{ loop.index }}</th>
+                                        <td>{{ item.name }}</td>
+                                        <td>{{ item.score }}</td>
+                                        <td>{% if item.expired_flag %}是{% else %}否{% endif %}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 考试管理 -->
+    <div class="container" id="exam-management-teacher" style="display: none">
+        <div class="card">
+            <div class="card-body">
+                <!-- 管理按钮 -->
+                <div class="row">
+                    <div class="col-md-8" style="display: contents">
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-danger btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;" onclick="showExamAddPrompt()"> 新建考试 </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-danger btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;"> 删除考试 </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-danger btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;"> 修改考试 </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-danger btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;"> 修改考试 </button>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover ">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">考试名称</th>
+                                <th scope="col">当前状态</th>
+                                <th scope="col">开始时间</th>
+                                <th scope="col">结束时间</th>
+                                <th scope="col">允许逾期作答</th>
+                                <th scope="col">随机问题顺序</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                {% set exams = exams|default({"exam_list": [{"name": "测试考试", "current_status": -1, "start_time": 1704628540, "end_time": "1704635143", "allow_answer_when_expired": 1, "random_question": 0}]}) %} {% for item in exams.exam_list %}
+                                <tr>
+                                    <th scope="row">{{ loop.index }}</th>
+                                    <td>{{ item.name }}</td>
+                                    <td> {% if item.current_status == 0 %}未开始{% elif item.current_status == 1 %}正在进行{% elif item.current_status == -1 %}已结束{% else %}未知状态{% endif %}</td>
+                                    <td>{{ item.start_time }}</td>
+                                    <td>{{ item.end_time }}</td>
+                                    <td>{% if item.allow_answer_when_expired %}是{% else %}否{% endif %}</td>
+                                    <td>{% if item.random_question %}是{% else %}否{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- 考试添加框 -->
+    <div class="container" id="exam-add-prompt" style="display: none">
+        <div class="row">
+            <div class="col-12">
+                <div class="card  ">
+                    <div class="card-body">
+                        <div class="col-3">
+                            <button type="button" class="btn btn-danger btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;" id="return-to-exam-management" onclick="returnToExamManagement()"> 返回 </button>
+                        </div>
+                        <section class="mb-4">
+                            <!--Section heading-->
+                            <h2 class="h1-responsive font-weight-bold text-center my-4">添加考试</h2>
+                            <!--Section description-->
+                            <p class="text-center w-responsive mx-auto mb-5">请在下方输入考试的相关信息</p>
+                            <div class="form-outline mb-4">
+                                <input type="text" id="exam-name" class="form-control" />
+                                <hr>
+                                <label class="form-label" for="exam-name">考试名称</label>
+                            </div>
+                            <div class="row">
+                                <div class="col-3">
+                                    <div class="form-outline mb-4">
+                                        <input type="date" id="exam-start-date" class="form-control" />
+                                        <hr>
+                                        <label class="form-label" for="exam-start-date">考试起始日期</label>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-outline mb-4">
+                                        <input type="time" id="exam-start-time" class="form-control" />
+                                        <hr>
+                                        <label class="form-label" for="exam-start-time">考试起始时间</label>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-outline mb-4">
+                                        <input type="date" id="exam-end-date" class="form-control" />
+                                        <hr>
+                                        <label class="form-label" for="exam-end-date">考试结束日期</label>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="form-outline mb-4">
+                                        <input type="time" id="exam-end-time" class="form-control" />
+                                        <hr>
+                                        <label class="form-label" for="exam-end-time">考试结束时间</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-outline mb-4">
+                                        <label class="form-label" for="allow-answer-when-expired">允许逾期作答</label>
+                                        <select id="allow-answer-when-expired" class="form-select">
+                                            <option value="">--- 请选择 ---</option>
+                                            <option value="1">允许</option>
+                                            <option value="0">不允许</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-outline mb-4">
+                                        <label class="form-label" for="random-questions">随机问题顺序</label>
+                                        <select id="random-questions" class="form-select">
+                                            <option value="">--- 请选择 ---</option>
+                                            <option value="1">是</option>
+                                            <option value="0">否</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <span id="csv-file-name">请选择要导入的题目文件（csv格式）</span>
+                                <br>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <input type="file" id="csv-file" style="display: none;" accept=".csv">
+                                        <button type="button" class="btn btn-danger btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;" id="exam-add-import-questions" onclick="importCsvFile()"> 导入题目 </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button type="button" class="btn btn-danger btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;" id="exam-add-confirm" disabled onclick="addExam()"> 确定导入
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
                 </div>
             </div>
         </div>
@@ -187,16 +407,63 @@
         document.addEventListener("DOMContentLoaded", function() {
             adjust_elements(); // 调整考试框的位置
             hide_nav_items(); // 隐藏不属于当前用户角色相关的顶栏链接
-        })
+        });
+
+        // 获取表单输入元素
+        const examNameInput = document.getElementById('exam-name');
+        const examStartDateInput = document.getElementById('exam-start-date');
+        const examStartTimeInput = document.getElementById('exam-start-time');
+        const examEndDateInput = document.getElementById('exam-end-date');
+        const examEndTimeInput = document.getElementById('exam-end-time');
+
+        // 获取对应的标签元素
+        const examNameLabel = document.querySelector('label[for="exam-name"]');
+        const examStartDateLabel = document.querySelector('label[for="exam-start-date"]');
+        const examStartTimeLabel = document.querySelector('label[for="exam-start-time"]');
+        const examEndDateLabel = document.querySelector('label[for="exam-end-date"]');
+        const examEndTimeLabel = document.querySelector('label[for="exam-end-time"]');
+
+        // 为每个输入框添加输入事件监听器，控制标签的显示与隐藏
+        examNameInput.addEventListener('input', () => {
+            examNameLabel.style.display = examNameInput.value.trim() !== '' ? 'none' : 'block';
+        });
+
+        examStartDateInput.addEventListener('input', () => {
+            examStartDateLabel.style.display = examStartDateInput.value.trim() !== '' ? 'none' : 'block';
+        });
+
+        examStartTimeInput.addEventListener('input', () => {
+            examStartTimeLabel.style.display = examStartTimeInput.value.trim() !== '' ? 'none' : 'block';
+        });
+
+        examEndDateInput.addEventListener('input', () => {
+            examEndDateLabel.style.display = examEndDateInput.value.trim() !== '' ? 'none' : 'block';
+        });
+
+        examEndTimeInput.addEventListener('input', () => {
+            examEndTimeLabel.style.display = examEndTimeInput.value.trim() !== '' ? 'none' : 'block';
+        });
 
         /**
-         * 调整考试入口元素的位置，使其根据窗口高度动态设置顶部填充
+         * 调整页面中各个元素的位置，使其根据窗口高度动态设置顶部填充
          */
         function adjust_elements() {
+            // 考试入口元素
             const exam_entrance = document.getElementById("exam-entrance");
             const height = window.innerHeight;
-            const width = window.innerWidth;
             exam_entrance.style.paddingTop = height * 0.3 + "px"; // 设置顶部填充为窗口高度的30%
+
+            // 学生成绩列表
+            const scores_list_student = document.getElementById("scores-list-student");
+            scores_list_student.style.paddingTop = height * 0.2 + "px";
+
+            // 老师考试管理列表
+            const exam_management_teacher = document.getElementById("exam-management-teacher");
+            exam_management_teacher.style.paddingTop = height * 0.15 + "px";
+
+            // 老师考试添加弹出框
+            const exam_add_prompt = document.getElementById("exam-add-prompt");
+            exam_add_prompt.style.paddingTop = height * 0.15 + "px";
         }
 
         /**
@@ -244,12 +511,14 @@
         }
 
         /**
-         * 处理封面消失的逻辑，包括淡出动画和显示考试入口
+         * 处理封面消失的逻辑，包括淡出动画和显示相应的内容
          */
         function dismiss_cover() {
             const cover = document.getElementById("cover-container");
-            if (window.role == 0) { // 如果用户角色为教师
+            if (window.role == 0) { // 如果用户角色为学生
                 var element = document.getElementById("exam-entrance");
+            } else if (window.role == 1) { // 如果用户角色为教师
+                var element = document.getElementById("exam-management-teacher");
             }
             // 添加淡出动画类
             cover.classList.add('fade-out');
@@ -258,9 +527,13 @@
             cover.addEventListener('animationend', function handler() {
                 // 隐藏覆盖层
                 cover.style.display = 'none';
-
-                // 显示考试入口
-                element.style.display = 'flex';
+                if (element.id == "exam-entrance") {
+                    // 显示考试入口
+                    element.style.display = 'flex';
+                } else {
+                    // 显示考试管理
+                    element.style.display = '';
+                }
 
                 // 添加淡入动画类
                 element.classList.add('fade-in');
@@ -268,6 +541,124 @@
                 // 移除事件监听器，避免重复触发
                 cover.removeEventListener('animationend', handler);
             });
+        }
+
+        /**
+         * 显示考试添加弹出框，并隐藏考试管理列表
+         */
+        function showExamAddPrompt() {
+            const examAddPrompt = document.getElementById("exam-add-prompt");
+            const examManagementTeacher = document.getElementById("exam-management-teacher");
+            examManagementTeacher.classList.add('fade-out'); // 添加淡出动画
+            examManagementTeacher.style.display = 'none'; // 隐藏考试管理列表
+            examAddPrompt.classList.remove('fade-out'); // 移除淡出动画
+            examAddPrompt.classList.add('fade-in'); // 添加淡入动画
+            examAddPrompt.style.display = ''; // 显示考试添加弹出框
+        }
+
+        /**
+         * 返回到考试管理列表，并隐藏考试添加弹出框
+         */
+        function returnToExamManagement() {
+            const examAddPrompt = document.getElementById("exam-add-prompt");
+            const examManagementTeacher = document.getElementById("exam-management-teacher");
+            examAddPrompt.classList.add('fade-out'); // 添加淡出动画
+            examAddPrompt.style.display = 'none'; // 隐藏考试添加弹出框
+            examManagementTeacher.classList.remove('fade-out'); // 移除淡出动画
+            examManagementTeacher.classList.add('fade-in'); // 添加淡入动画
+            examManagementTeacher.style.display = ''; // 显示考试管理列表
+        }
+
+        /**
+         * 隐藏其他元素，仅显示指定的元素
+         * @param {string} noHideElement - 不隐藏的元素的 ID
+         */
+        function hide_others(noHideElement) {
+            var hide_list = ["cover-container", "exam-entrance", "scores-list-student", "exam-management-teacher", "exam-add-prompt"];
+            var display_mode_block = ["scores-list-student"];
+            var display_mode_empty = ["exam-management-teacher", "exam-add-prompt"];
+            for (var i = 0; i < hide_list.length; i++) {
+                if (hide_list[i] != noHideElement) {
+                    var element = document.getElementById(hide_list[i]);
+                    element.classList.add('fade-out'); // 添加淡出动画
+                    element.style.display = 'none'; // 隐藏元素
+                }
+            }
+            var displayElement = document.getElementById(noHideElement);
+            if (display_mode_block.includes(displayElement.id)) {
+                displayElement.style.display = 'block'; // 设置显示模式为块级
+            } else if (display_mode_empty.includes(displayElement.id)) {
+                displayElement.style.display = ''; // 恢复默认显示模式
+            } else {
+                displayElement.style.display = 'flex'; // 设置显示模式为弹性盒子
+            }
+            displayElement.classList.remove('fade-out'); // 移除淡出动画
+            displayElement.classList.add('fade-in'); // 添加淡入动画
+        }
+
+        let csvFile = null; // 存储上传的 CSV 文件
+
+        /**
+         * 触发文件选择对话框以导入 CSV 文件
+         */
+        function importCsvFile() {
+            document.getElementById('csv-file').click();
+        }
+
+        // 监听 CSV 文件输入变化事件
+        document.getElementById('csv-file').addEventListener('change', function() {
+            csvFile = this.files[0];
+            document.getElementById('csv-file-name').innerText = `当前选择的文件：${csvFile.name}`;
+            toggleExamAddConfirmButton();
+        });
+
+        // 为各个表单字段添加输入事件监听器，以控制确认按钮的启用状态
+        document.getElementById('exam-name').addEventListener('input', toggleExamAddConfirmButton);
+        document.getElementById('exam-start-date').addEventListener('input', toggleExamAddConfirmButton);
+        document.getElementById('exam-start-time').addEventListener('input', toggleExamAddConfirmButton);
+        document.getElementById('exam-end-date').addEventListener('input', toggleExamAddConfirmButton);
+        document.getElementById('exam-end-time').addEventListener('input', toggleExamAddConfirmButton);
+        document.getElementById('allow-answer-when-expired').addEventListener('change', toggleExamAddConfirmButton);
+        document.getElementById('random-questions').addEventListener('change', toggleExamAddConfirmButton);
+
+        /**
+         * 根据表单字段和文件选择状态，切换确认按钮的禁用状态
+         */
+        function toggleExamAddConfirmButton() {
+            if (csvFile &&
+                document.getElementById('exam-name').value &&
+                document.getElementById('exam-start-date').value &&
+                document.getElementById('exam-start-time').value &&
+                document.getElementById('exam-end-date').value &&
+                document.getElementById('exam-end-time').value &&
+                document.getElementById('allow-answer-when-expired').value &&
+                document.getElementById('random-questions').value) {
+                document.getElementById('exam-add-confirm').disabled = false; // 启用确认按钮
+            } else {
+                document.getElementById('exam-add-confirm').disabled = true; // 禁用确认按钮
+            }
+        }
+
+        /**
+         * 添加考试信息，提交表单数据到服务器
+         */
+        function addExam() {
+            let formData = new FormData();
+            formData.append('examName', document.getElementById('exam-name').value);
+            formData.append('startDate', document.getElementById('exam-start-date').value + ' ' + document.getElementById('exam-start-time').value);
+            formData.append('endDate', document.getElementById('exam-end-date').value + ' ' + document.getElementById('exam-end-time').value);
+            formData.append('allowAnswerWhenExpired', document.getElementById('allow-answer-when-expired').value);
+            formData.append('randomQuestions', document.getElementById('random-questions').value);
+            formData.append('csvFile', csvFile);
+
+            // 发送 POST 请求到服务器 API
+            fetch('/api/v1/teacher/addexam', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json()) // 解析响应为 JSON
+                .then(data => console.log(data)) // 在控制台输出返回的数据
+                .catch(error => console.error(error)); // 捕获并在控制台输出错误
         }
     </script>
 </body>
