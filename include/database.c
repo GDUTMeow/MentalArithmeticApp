@@ -29,7 +29,10 @@ History:        暂无
                         [+] 添加了绑定类型，使得数据库类型与参数类型的绑定更加容易
                         [+] 添加了测试用例代码
                         [*] 修复了一些因为数据未进行初始化而导致的bug
-
+    4.  Date: 2024/12/10
+        Author: 吴沛熹
+        ID: GamerNoTitle
+        Modification:   [*] 将 query_*_all 函数改为查询所有的内容，筛选通过中间件flask进行
  */
 
 #include <stdio.h>
@@ -430,28 +433,22 @@ int query_score_info(const char *exam_id, const char *user_id, struct SqlRespons
 /**************************** 多条数据查询开始 ****************************/
 
 /**
- * @brief 查询数据库 db/examination.db 中符合条件的所有考试信息（返回多条数据）
+ * @brief 查询数据库 db/examination.db 中所有考试信息（返回多条数据）
  *
- * @param name 考试名称，支持模糊查询，可以为空表示查询所有考试
- * @param start_time 查询起始时间的最小值，-1表示不限制
- * @param end_time 查询结束时间的最大值，-1表示不限制
  * @param exams_to_return 查询结果返回的 SqlResponseExam 结构体类型数组
  * @param length 查询结果数组的大小，同时也是查询结果返回的限制数量，类似于一个外置的LIMIT
  *
  * @return int 函数执行成功与否，成功返回0，否则为1
  */
-int query_exams_info_all(const char *name, int start_time, int end_time, struct SqlResponseExam *exams_to_return, int length)
+int query_exams_info_all(struct SqlResponseExam *exams_to_return, int length)
 {
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
     int count = 0;
 
-    // 构建SQL语句
-    char sql[512];
-    snprintf(sql, sizeof(sql),
-             "SELECT id, name, start_time, end_time, allow_answer_when_expired, random_question FROM examinations "
-             "WHERE (name LIKE ?) AND (start_time >= ?) AND (end_time <= ?) LIMIT ?;");
+    // 构建SQL语句，无条件限制
+    const char *sql = "SELECT id, name, start_time, end_time, allow_answer_when_expired, random_question FROM examinations LIMIT ?;";
 
     // 初始化传入的exams_to_return，避免返回出错
     for (int i = 0; i < length; i++)
@@ -474,50 +471,8 @@ int query_exams_info_all(const char *name, int start_time, int end_time, struct 
         return 1;
     }
 
-    // 绑定参数
-    const char *name_param = (strlen(name) > 0) ? name : "%%";
-    rc = sqlite3_bind_text(stmt, 1, name_param, -1, SQLITE_STATIC);
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定名称参数失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1;
-    }
-
-    if (start_time == -1)
-    {
-        rc = sqlite3_bind_int(stmt, 2, 0); // 不限制开始时间
-    }
-    else
-    {
-        rc = sqlite3_bind_int(stmt, 2, start_time); // 绑定开始时间起始条件
-    }
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定开始时间条件失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1;
-    }
-
-    if (end_time == -1)
-    {
-        rc = sqlite3_bind_int(stmt, 3, INT32_MAX); // 设置为INT32_MAX表示不限制
-    }
-    else
-    {
-        rc = sqlite3_bind_int(stmt, 3, end_time); // 绑定结束时间截止条件
-    }
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定结束时间条件失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1;
-    }
-
-    rc = sqlite3_bind_int(stmt, 4, length); // 绑定LIMIT参数
+    // 绑定LIMIT参数
+    rc = sqlite3_bind_int(stmt, 1, length); // 绑定LIMIT参数
     if (rc != SQLITE_OK)
     {
         log_message(LOGLEVEL_ERROR, "绑定LIMIT参数失败：%s", sqlite3_errmsg(db));
@@ -529,17 +484,24 @@ int query_exams_info_all(const char *name, int start_time, int end_time, struct 
     // 执行查询
     while ((rc = sqlite3_step(stmt)) == SQLITE_ROW && count < length)
     {
-        strncpy(exams_to_return[count].id, (const char *)sqlite3_column_text(stmt, 0), sizeof(exams_to_return[count].id) - 1);
-        exams_to_return[count].id[sizeof(exams_to_return[count].id) - 1] = '\0'; // 确保字符串终止
+        // 提取查询结果并确保字符串正确终止
+        const unsigned char *id_text = sqlite3_column_text(stmt, 0);
+        const unsigned char *name_text = sqlite3_column_text(stmt, 1);
 
-        strncpy(exams_to_return[count].name, (const char *)sqlite3_column_text(stmt, 1), sizeof(exams_to_return[count].name) - 1);
-        exams_to_return[count].name[sizeof(exams_to_return[count].name) - 1] = '\0'; // 确保字符串终止
+        if (id_text && name_text)
+        {
+            strncpy(exams_to_return[count].id, (const char *)id_text, sizeof(exams_to_return[count].id) - 1);
+            exams_to_return[count].id[sizeof(exams_to_return[count].id) - 1] = '\0'; // 确保字符串终止
 
-        exams_to_return[count].start_time = sqlite3_column_int(stmt, 2);
-        exams_to_return[count].end_time = sqlite3_column_int(stmt, 3);
-        exams_to_return[count].allow_answer_when_expired = sqlite3_column_int(stmt, 4);
-        exams_to_return[count].random_question = sqlite3_column_int(stmt, 5);
-        count++;
+            strncpy(exams_to_return[count].name, (const char *)name_text, sizeof(exams_to_return[count].name) - 1);
+            exams_to_return[count].name[sizeof(exams_to_return[count].name) - 1] = '\0'; // 确保字符串终止
+
+            exams_to_return[count].start_time = sqlite3_column_int(stmt, 2);
+            exams_to_return[count].end_time = sqlite3_column_int(stmt, 3);
+            exams_to_return[count].allow_answer_when_expired = sqlite3_column_int(stmt, 4);
+            exams_to_return[count].random_question = sqlite3_column_int(stmt, 5);
+            count++;
+        }
     }
 
     if (count > 0)
@@ -548,7 +510,7 @@ int query_exams_info_all(const char *name, int start_time, int end_time, struct 
     }
     else
     {
-        log_message(LOGLEVEL_INFO, "没有找到符合条件的考试信息");
+        log_message(LOGLEVEL_INFO, "没有找到任何考试信息");
     }
 
     // 清理和关闭数据库
@@ -558,28 +520,22 @@ int query_exams_info_all(const char *name, int start_time, int end_time, struct 
 }
 
 /**
- * @brief 查询数据库 db/user.db 中符合条件的所有用户信息（返回多条数据）
+ * @brief 查询数据库 db/user.db 中所有用户信息（返回多条数据）
  *
- * @param name 用户姓名，支持模糊查询，可以为空表示查询所有用户
- * @param class_name 用户班级，支持模糊查询，可以为空表示查询所有班级
- * @param role 用户角色，需要精确查询，0表示学生，1表示老师
- * @param number 用户学号/工号，支持模糊查询，可以为空表示查询所有用户
- * @param belong_to (仅学生) 学生归属的老师，需要填入老师的UUID，可以为空表示不限制
  * @param users_to_return 查询结果返回的 User 结构体类型数组
- * @param length 查询结果数组的大小
+ * @param length 查询结果数组的大小，同时也是查询结果返回的限制数量，类似于一个外置的LIMIT
  *
  * @return int 函数执行成功与否，成功返回0，否则为1
  */
-int query_users_info_all(const char *name, const char *class_name, int role, const char *number, const char *belong_to, struct User *users_to_return, int length)
+int query_users_info_all(struct User *users_to_return, int length)
 {
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
     int count = 0;
 
-    // 构建SQL语句，使用 CAST 将 number 转换为 TEXT 以支持 LIKE 运算符
-    const char *cmd = "SELECT id, username, role, name, class_name, number, belong_to FROM users "
-                      "WHERE (name LIKE ?) AND (class_name LIKE ?) AND (role = ?) AND (CAST(number AS TEXT) LIKE ?) AND (belong_to LIKE ?) LIMIT ?;";
+    // 构建SQL语句，无条件限制，使用 LIMIT
+    const char *cmd = "SELECT id, username, role, name, class_name, number, belong_to FROM users LIMIT ?;";
 
     // 打开数据库
     if (open_database(USER_DB, &db))
@@ -590,10 +546,10 @@ int query_users_info_all(const char *name, const char *class_name, int role, con
     // 启用外键支持
     sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, NULL);
 
-    // 初始化传入的user_to_return，避免返回出错
-    for (int count = 0; count < length; count++)
+    // 初始化传入的users_to_return，避免返回出错
+    for (int i = 0; i < length; i++)
     {
-        strcpy(users_to_return[count].id, "");
+        strcpy(users_to_return[i].id, "");
     }
 
     // 准备查询语句
@@ -605,59 +561,8 @@ int query_users_info_all(const char *name, const char *class_name, int role, con
         return 1; // 执行失败
     }
 
-    // 绑定查询条件
-    // 如果参数为空，则使用通配符 '%' 进行匹配所有
-    const char *name_param = (name && strlen(name) > 0) ? name : "%%";
-    const char *class_param = (class_name && strlen(class_name) > 0) ? class_name : "%%";
-    const char *number_param = (number && strlen(number) > 0) ? number : "%%";
-    const char *belong_to_param = (belong_to && strlen(belong_to) > 0) ? belong_to : "%%";
-
-    rc = sqlite3_bind_text(stmt, 1, name_param, -1, SQLITE_STATIC);
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定姓名参数失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1; // 执行失败
-    }
-
-    rc = sqlite3_bind_text(stmt, 2, class_param, -1, SQLITE_STATIC);
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定班级参数失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1; // 执行失败
-    }
-
-    rc = sqlite3_bind_int(stmt, 3, role);
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定角色参数失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1; // 执行失败
-    }
-
-    rc = sqlite3_bind_text(stmt, 4, number_param, -1, SQLITE_STATIC);
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定学号/工号参数失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1; // 执行失败
-    }
-
-    rc = sqlite3_bind_text(stmt, 5, belong_to_param, -1, SQLITE_STATIC);
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定归属教师参数失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1; // 执行失败
-    }
-
-    rc = sqlite3_bind_int(stmt, 6, length);
+    // 绑定LIMIT参数
+    rc = sqlite3_bind_int(stmt, 1, length);
     if (rc != SQLITE_OK)
     {
         log_message(LOGLEVEL_ERROR, "绑定LIMIT参数失败：%s", sqlite3_errmsg(db));
@@ -710,7 +615,7 @@ int query_users_info_all(const char *name, const char *class_name, int role, con
     }
     else
     {
-        log_message(LOGLEVEL_INFO, "没有找到符合条件的用户信息", cmd);
+        log_message(LOGLEVEL_INFO, "没有找到任何用户信息");
     }
 
     // 清理和关闭数据库
@@ -718,23 +623,24 @@ int query_users_info_all(const char *name, const char *class_name, int role, con
     sqlite3_close(db);
     return 0; // 执行成功
 }
+
 /**
- * @brief 查询数据库 db/examination.db 中符合条件的所有问题信息（返回多条数据）
+ * @brief 查询数据库 db/examination.db 中所有问题信息（返回多条数据）
  *
- * @param exam_id 所属考试的ID，只允许此方式查询，用来构建问题列表
  * @param questions_to_return 查询结果返回的 SqlResponseQuestion 结构体类型数组
- * @param length 查询结果数组的大小
+ * @param length 查询结果数组的大小，同时也是查询结果返回的限制数量，类似于一个外置的LIMIT
  *
  * @return int 函数执行成功与否，成功返回0，否则为1
  */
-int query_questions_info_all(const char *exam_id, struct SqlResponseQuestion *questions_to_return, int length)
+int query_questions_info_all(struct SqlResponseQuestion *questions_to_return, int length)
 {
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
     int count = 0;
 
-    const char *sql = "SELECT id, exam_id, num1, op, num2 FROM questions WHERE exam_id = ? LIMIT ?;";
+    // 构建SQL语句，无条件限制，使用 LIMIT
+    const char *sql = "SELECT id, exam_id, num1, op, num2 FROM questions LIMIT ?;";
 
     // 打开数据库
     if (open_database(EXAMINATION_DB, &db))
@@ -746,9 +652,9 @@ int query_questions_info_all(const char *exam_id, struct SqlResponseQuestion *qu
     sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, NULL);
 
     // 初始化传入的questions_to_return，避免出错
-    for (int count = 0; count < length; count++)
+    for (int i = 0; i < length; i++)
     {
-        strcpy(questions_to_return[count].id, "");
+        strcpy(questions_to_return[i].id, "");
     }
 
     // 准备查询语句
@@ -760,18 +666,8 @@ int query_questions_info_all(const char *exam_id, struct SqlResponseQuestion *qu
         return 1;
     }
 
-    // 绑定考试ID
-    rc = sqlite3_bind_text(stmt, 1, exam_id, -1, SQLITE_STATIC);
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定考试ID参数失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1;
-    }
-
-    // 绑定LIMIT参数
-    rc = sqlite3_bind_int(stmt, 2, length);
+    // 绑定 LIMIT 参数
+    rc = sqlite3_bind_int(stmt, 1, length);
     if (rc != SQLITE_OK)
     {
         log_message(LOGLEVEL_ERROR, "绑定LIMIT参数失败：%s", sqlite3_errmsg(db));
@@ -808,7 +704,7 @@ int query_questions_info_all(const char *exam_id, struct SqlResponseQuestion *qu
     }
     else
     {
-        log_message(LOGLEVEL_INFO, "没有找到符合条件的问题信息");
+        log_message(LOGLEVEL_INFO, "没有找到任何问题信息");
     }
 
     // 清理和关闭数据库
@@ -818,24 +714,22 @@ int query_questions_info_all(const char *exam_id, struct SqlResponseQuestion *qu
 }
 
 /**
- * @brief 查询数据库 db/examination.db 中符合条件的所有问题信息（返回多条数据）
+ * @brief 查询数据库 db/scores.db 中所有成绩信息（返回多条数据）
  *
- * @param exam_id 考试ID（UUID，唯一）
- * @param student_number 学生的学号
- * @param scores_to_return 将数据返回的 SqlResponseScore 类型结构体模型
- * @param length 返回数据数量
- * @return int 成功返回0，否则返回1
+ * @param scores_to_return 查询结果返回的 SqlResponseScore 结构体类型数组
+ * @param length 查询结果数组的大小，同时也是查询结果返回的限制数量，类似于一个外置的LIMIT
+ *
+ * @return int 函数执行成功与否，成功返回0，否则为1
  */
-int query_scores_info_all(const char *exam_id, const char *student_number, struct SqlResponseScore *scores_to_return, int length)
+int query_scores_info_all(struct SqlResponseScore *scores_to_return, int length)
 {
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
     int count = 0;
 
-    // 构建SQL语句，使用 '=' 进行精确匹配
-    const char *sql = "SELECT id, exam_id, user_id, score, expired_flag FROM scores "
-                      "WHERE (exam_id LIKE ?) AND (user_id LIKE ?) LIMIT ?;";
+    // 构建SQL语句，无条件限制，使用 LIMIT
+    const char *sql = "SELECT id, exam_id, user_id, score, expired_flag FROM scores LIMIT ?;";
 
     // 打开数据库
     if (open_database(SCORES_DB, &db))
@@ -847,9 +741,9 @@ int query_scores_info_all(const char *exam_id, const char *student_number, struc
     sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, NULL);
 
     // 初始化传入的scores_to_return，避免出错
-    for (int count = 0; count < length; count++)
+    for (int i = 0; i < length; i++)
     {
-        strcpy(scores_to_return[count].id, "");
+        strcpy(scores_to_return[i].id, "");
     }
 
     // 准备查询语句
@@ -861,30 +755,8 @@ int query_scores_info_all(const char *exam_id, const char *student_number, struc
         return 1;
     }
 
-    // 绑定考试ID
-    const char *exam_param = (strlen(exam_id) > 0) ? exam_id : "%%";
-    rc = sqlite3_bind_text(stmt, 1, exam_param, -1, SQLITE_STATIC);
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定考试ID参数失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1;
-    }
-
-    // 绑定学号/工号
-    const char *student_param = (strlen(student_number) > 0) ? student_number : "%%";
-    rc = sqlite3_bind_text(stmt, 2, student_param, -1, SQLITE_STATIC);
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定学号/工号参数失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1;
-    }
-
     // 绑定LIMIT参数
-    rc = sqlite3_bind_int(stmt, 3, length);
+    rc = sqlite3_bind_int(stmt, 1, length);
     if (rc != SQLITE_OK)
     {
         log_message(LOGLEVEL_ERROR, "绑定LIMIT参数失败：%s", sqlite3_errmsg(db));
@@ -924,7 +796,7 @@ int query_scores_info_all(const char *exam_id, const char *student_number, struc
     }
     else
     {
-        log_message(LOGLEVEL_INFO, "没有找到符合条件的成绩信息");
+        log_message(LOGLEVEL_INFO, "没有找到任何成绩信息");
     }
 
     // 清理和关闭数据库
