@@ -1,0 +1,1160 @@
+<script>
+    // 获取表单输入元素
+    const examNameInput = document.getElementById("exam-name");
+    const examStartDateInput = document.getElementById("exam-start-date");
+    const examStartTimeInput = document.getElementById("exam-start-time");
+    const examEndDateInput = document.getElementById("exam-end-date");
+    const examEndTimeInput = document.getElementById("exam-end-time");
+
+    // 获取对应的标签元素
+    const examNameLabel = document.querySelector('label[for="exam-name"]');
+    const examStartDateLabel = document.querySelector(
+        'label[for="exam-start-date"]'
+    );
+    const examStartTimeLabel = document.querySelector(
+        'label[for="exam-start-time"]'
+    );
+    const examEndDateLabel = document.querySelector('label[for="exam-end-date"]');
+    const examEndTimeLabel = document.querySelector('label[for="exam-end-time"]');
+
+    // 为每个输入框添加输入事件监听器，控制标签的显示与隐藏
+    examNameInput.addEventListener("input", () => {
+        examNameLabel.style.display =
+            examNameInput.value.trim() !== "" ? "none" : "block";
+    });
+
+    examStartDateInput.addEventListener("input", () => {
+        examStartDateLabel.style.display =
+            examStartDateInput.value.trim() !== "" ? "none" : "block";
+    });
+
+    examStartTimeInput.addEventListener("input", () => {
+        examStartTimeLabel.style.display =
+            examStartTimeInput.value.trim() !== "" ? "none" : "block";
+    });
+
+    examEndDateInput.addEventListener("input", () => {
+        examEndDateLabel.style.display =
+            examEndDateInput.value.trim() !== "" ? "none" : "block";
+    });
+
+    examEndTimeInput.addEventListener("input", () => {
+        examEndTimeLabel.style.display =
+            examEndTimeInput.value.trim() !== "" ? "none" : "block";
+    });
+
+    /**
+     * 调整页面中各个元素的位置，使其根据窗口高度动态设置顶部填充
+     */
+    function adjust_elements() {
+
+        // 考试入口元素
+        const exam_entrance = document.getElementById("exam-entrance");
+        const height = window.innerHeight;
+        exam_entrance.style.paddingTop = height * 0.3 + "px"; // 设置顶部填充为窗口高度的30%
+
+        // 学生成绩列表
+        const scores_list_student = document.getElementById("scores-list-student");
+        scores_list_student.style.paddingTop = height * 0.2 + "px";
+
+        // 老师考试管理列表
+        const exam_management_teacher = document.getElementById(
+            "exam-management-teacher"
+        );
+        exam_management_teacher.style.paddingTop = height * 0.15 + "px";
+
+        // 老师考试添加弹出框
+        const exam_add_prompt = document.getElementById("exam-add-prompt");
+        exam_add_prompt.style.paddingTop = height * 0.15 + "px";
+
+        // 学生成绩列表
+        const student_management_teacher = document.getElementById(
+            "student-management-teacher"
+        );
+        student_management_teacher.style.paddingTop = height * 0.15 + "px";
+
+        // 学生添加弹出框
+        const student_add_prompt = document.getElementById("student-add-prompt");
+        student_add_prompt.style.paddingTop = height * 0.15 + "px";
+
+        // 学生修改弹出框
+        const student_modify_prompt = document.getElementById(
+            "student-modify-prompt"
+        );
+        student_modify_prompt.style.paddingTop = height * 0.15 + "px";
+
+        // 个人信息窗口
+        const personal_information = document.getElementById(
+            "personal-info"
+        )
+        personal_information.style.paddingTop = height * 0.15 + "px";
+    }
+
+    /**
+     * 根据给定的名称获取对应的 Cookie 值
+     * @param {string} cname - Cookie 的名称
+     * @returns {string} - Cookie 的值，如果不存在则返回空字符串
+     */
+    function getCookie(cname) {
+        var name = cname + "=";
+        var ca = document.cookie.split(";");
+        for (var i = 0; i < ca.length; i++) {
+            var c = ca[i].trim();
+            if (c.indexOf(name) == 0) return c.substring(name.length, c.length);
+        }
+        return "";
+    }
+
+    /**
+     * 隐藏与当前用户角色不相关的导航项
+     * 通过解析 Cookie 中的 token 获取用户角色，并根据角色显示或隐藏相应的导航项
+     */
+    function hide_nav_items() {
+        var token = getCookie("token");
+        var data_from_token = "";
+        var data_section_start_flag = 0;
+        // 解析 JWT token 获取 payload 部分
+        for (var i = 0; i < token.length; i++) {
+            var c = token[i].trim();
+            if (c == ".") {
+                data_section_start_flag = !data_section_start_flag;
+            } else if (data_section_start_flag) {
+                data_from_token = data_from_token + token[i];
+            }
+        }
+        // 解码并解析 JSON 数据
+        var data = JSON.parse(Base64.decode(data_from_token));
+        window.role = data.role; // 将角色存储在全局变量中
+        if (data.role == 1) {
+            const stu_nav_items = document.getElementById("student-nav-items");
+            stu_nav_items.style.display = "none"; // 如果是学生角色，隐藏教师导航项
+        } else if (data.role == 0) {
+            const tea_nav_items = document.getElementById("teacher-nav-items");
+            tea_nav_items.style.display = "none"; // 如果是教师角色，隐藏学生导航项
+        }
+    }
+
+    /**
+     * 处理封面消失的逻辑，包括淡出动画和显示相应的内容
+     */
+    function dismiss_cover() {
+        const cover = document.getElementById("cover-container");
+        if (window.role == 0) {
+            // 如果用户角色为学生
+            var element = document.getElementById("exam-entrance");
+        } else if (window.role == 1) {
+            // 如果用户角色为教师
+            var element = document.getElementById("exam-management-teacher");
+        } else return;
+        // 添加淡出动画类
+        cover.classList.add("fade-out");
+
+        // 监听淡出动画结束事件
+        cover.addEventListener("animationend", function handler() {
+            // 隐藏覆盖层
+            cover.style.display = "none";
+            if (element.id == "exam-entrance") {
+                // 显示考试入口
+                element.style.display = "flex";
+            } else {
+                // 显示考试管理
+                element.style.display = "";
+            }
+
+            // 添加淡入动画类
+            element.classList.add("fade-in");
+
+            // 移除事件监听器，避免重复触发
+            cover.removeEventListener("animationend", handler);
+        });
+    }
+
+    /**
+     * 显示考试添加弹出框，并隐藏考试管理列表
+     */
+    function showExamAddPrompt() {
+        const examAddPrompt = document.getElementById("exam-add-prompt");
+        const examManagementTeacher = document.getElementById(
+            "exam-management-teacher"
+        );
+        examManagementTeacher.classList.add("fade-out"); // 添加淡出动画
+        examManagementTeacher.style.display = "none"; // 隐藏考试管理列表
+        examAddPrompt.classList.remove("fade-out"); // 移除淡出动画
+        examAddPrompt.classList.add("fade-in"); // 添加淡入动画
+        examAddPrompt.style.display = ""; // 显示考试添加弹出框
+    }
+
+    /**
+     * 返回到考试管理列表，并隐藏考试添加弹出框
+     */
+    function returnToExamManagement() {
+        const examAddPrompt = document.getElementById("exam-add-prompt");
+        const examEditPrompt = document.getElementById("exam-modify-prompt");
+        const examScoresView = document.getElementById("exam-scores-view");
+        const examManagementTeacher = document.getElementById("exam-management-teacher");
+        examScoresView.classList.add("fade-out"); // 添加淡出动画
+        examScoresView.style.display = "none"; // 隐藏成绩查看容器
+        examAddPrompt.classList.add("fade-out"); // 添加淡出动画
+        examAddPrompt.style.display = "none"; // 隐藏考试添加弹出框
+        examEditPrompt.classList.add("fade-out"); // 添加淡出动画
+        examEditPrompt.style.display = "none"; // 隐藏考试添加弹出框
+        examManagementTeacher.classList.remove("fade-out"); // 移除淡出动画
+        examManagementTeacher.classList.add("fade-in"); // 添加淡入动画
+        examManagementTeacher.style.display = ""; // 显示考试管理列表
+    }
+
+    /**
+     * 隐藏其他元素，仅显示指定的元素
+     * @param {string} noHideElement - 不隐藏的元素的 ID
+     */
+    function hide_others(noHideElement) {
+        var hide_list = [
+            "cover-container",
+            "exam-entrance",
+            "scores-list-student",
+            "exam-management-teacher",
+            "exam-add-prompt",
+            "exam-modify-prompt",
+            "exam-scores-view",
+            "student-management-teacher",
+            "student-add-prompt",
+            "student-modify-prompt",
+            "personal-info",
+        ];
+        var display_mode_block = ["scores-list-student", "personal-info"];
+        var display_mode_empty = [
+            "exam-management-teacher",
+            "exam-add-prompt",
+            "exam-modify-prompt",
+            "exam-scores-view",
+            "student-management-teacher",
+            "student-add-prompt",
+            "student-modify-prompt",
+        ];
+        for (var i = 0; i < hide_list.length; i++) {
+            if (hide_list[i] != noHideElement) {
+                var element = document.getElementById(hide_list[i]);
+                element.classList.add("fade-out"); // 添加淡出动画
+                element.style.display = "none"; // 隐藏元素
+            }
+        }
+        var displayElement = document.getElementById(noHideElement);
+        if (display_mode_block.includes(displayElement.id)) {
+            displayElement.style.display = "block"; // 设置显示模式为块级
+        } else if (display_mode_empty.includes(displayElement.id)) {
+            displayElement.style.display = ""; // 恢复默认显示模式
+        } else {
+            displayElement.style.display = "flex"; // 设置显示模式为弹性盒子
+        }
+        displayElement.classList.remove("fade-out"); // 移除淡出动画
+        displayElement.classList.add("fade-in"); // 添加淡入动画
+    }
+
+    let csvFile = null; // 存储上传的 CSV 文件
+
+    /**
+     * 触发文件选择对话框以导入 CSV 文件
+     */
+    function importCsvFile() {
+        document.getElementById("csv-file").click();
+    }
+
+    // 监听 CSV 文件输入变化事件
+    document.getElementById("csv-file").addEventListener("change", function() {
+        csvFile = this.files[0];
+        document.getElementById(
+            "csv-file-name"
+        ).innerText = `当前选择的文件：${csvFile.name}`;
+        toggleExamAddConfirmButton();
+    });
+
+    // 为各个表单字段添加输入事件监听器，以控制确认按钮的启用状态
+    document
+        .getElementById("exam-name")
+        .addEventListener("input", toggleExamAddConfirmButton);
+    document
+        .getElementById("exam-start-date")
+        .addEventListener("input", toggleExamAddConfirmButton);
+    document
+        .getElementById("exam-start-time")
+        .addEventListener("input", toggleExamAddConfirmButton);
+    document
+        .getElementById("exam-end-date")
+        .addEventListener("input", toggleExamAddConfirmButton);
+    document
+        .getElementById("exam-end-time")
+        .addEventListener("input", toggleExamAddConfirmButton);
+    document
+        .getElementById("allow-answer-when-expired")
+        .addEventListener("change", toggleExamAddConfirmButton);
+    document
+        .getElementById("random-questions")
+        .addEventListener("change", toggleExamAddConfirmButton);
+
+    /**
+     * 根据表单字段和文件选择状态，切换确认按钮的禁用状态
+     */
+    function toggleExamAddConfirmButton() {
+        if (
+            csvFile &&
+            document.getElementById("exam-name").value &&
+            document.getElementById("exam-start-date").value &&
+            document.getElementById("exam-start-time").value &&
+            document.getElementById("exam-end-date").value &&
+            document.getElementById("exam-end-time").value &&
+            document.getElementById("allow-answer-when-expired").value &&
+            document.getElementById("random-questions").value
+        ) {
+            document.getElementById("exam-add-confirm").disabled = false; // 启用确认按钮
+        } else {
+            document.getElementById("exam-add-confirm").disabled = true; // 禁用确认按钮
+        }
+    }
+
+    /**
+     * 添加考试信息，提交表单数据到服务器
+     */
+    function addExam() {
+        let formData = new FormData();
+        formData.append("examName", document.getElementById("exam-name").value);
+        formData.append(
+            "startDate",
+            document.getElementById("exam-start-date").value +
+            " " +
+            document.getElementById("exam-start-time").value
+        );
+        formData.append(
+            "endDate",
+            document.getElementById("exam-end-date").value +
+            " " +
+            document.getElementById("exam-end-time").value
+        );
+        formData.append(
+            "allowAnswerWhenExpired",
+            document.getElementById("allow-answer-when-expired").value
+        );
+        formData.append(
+            "randomQuestions",
+            document.getElementById("random-questions").value
+        );
+        formData.append("csvFile", csvFile);
+
+        // 发送 POST 请求到服务器 API
+        fetch("/api/v1/teacher/addexam", {
+                method: "POST",
+                body: formData,
+            })
+            .then((response) => response.json()) // 解析响应为 JSON
+            .then((data) => console.log(data)) // 在控制台输出返回的数据
+            .catch((error) => console.error(error)); // 捕获并在控制台输出错误
+    }
+
+    /**
+     * 将指定表格中的起始时间和终止时间转换为 'YYYY-MM-DD HH-mm-SS' 格式。
+     * 如果转换失败，则保留原始值并继续处理下一个单元格。
+     */
+    function convertTimestampsInExamTable() {
+        // 选择具有特定 ID 的表格
+        const table = document.getElementById("exam-table");
+
+        // 检查表格是否存在
+        if (!table) {
+            console.warn('未找到 ID 为 "exam-table" 的表格。');
+            return;
+        }
+
+        // 获取表格的 tbody 部分
+        const tbody = table.querySelector("tbody");
+
+        // 检查 tbody 是否存在
+        if (!tbody) {
+            console.warn("未找到表格的 tbody 部分。");
+            return;
+        }
+
+        // 获取所有的表格行
+        const rows = tbody.querySelectorAll("tr");
+
+        // 如果没有行，则无需处理
+        if (rows.length === 0) {
+            console.warn("表格中没有任何行。");
+            return;
+        }
+
+        // 遍历每一行
+        rows.forEach((row) => {
+            // 获取当前行中的所有单元格
+            const cells = row.querySelectorAll("td");
+
+            // 确保当前行有足够的单元格（至少6个，序号不算）
+            if (cells.length < 6) {
+                console.warn("当前行的单元格数量不足，跳过此行。");
+                return;
+            }
+
+            // 获取“开始时间”和“结束时间”单元格
+            const startTimeCell = cells[3];
+            const endTimeCell = cells[4];
+
+            // 获取单元格的文本内容并去除多余的空白字符
+            const startTimeText = startTimeCell.textContent.trim();
+            const endTimeText = endTimeCell.textContent.trim();
+
+            // 尝试转换“开始时间”
+            const formattedStartTime = convertTimestamp(startTimeText);
+            if (formattedStartTime) {
+                startTimeCell.textContent = formattedStartTime;
+            }
+
+            // 尝试转换“结束时间”
+            const formattedEndTime = convertTimestamp(endTimeText);
+            if (formattedEndTime) {
+                endTimeCell.textContent = formattedEndTime;
+            }
+        });
+    }
+
+    /**
+     * 将 Unix 时间戳或字符串时间转换为 'YYYY-MM-DD HH-mm-SS' 格式。
+     * 如果转换失败，则返回 null。
+     * @param {string} timestampStr - 要转换的时间字符串或数字
+     * @returns {string|null} - 格式化后的时间字符串或 null（转换失败）
+     */
+    function convertTimestamp(timestampStr) {
+        try {
+            // 尝试将字符串转换为整数（假设是 Unix 时间戳，以秒为单位）
+            const timestamp = parseInt(timestampStr, 10);
+
+            // 检查是否为有效的数字
+            if (isNaN(timestamp)) {
+                console.warn(`无法将 "${timestampStr}" 转换为有效的时间戳。`);
+                return null;
+            }
+
+            // 创建一个新的 Date 对象（JavaScript 使用毫秒为单位，因此需要乘以 1000）
+            const date = new Date(timestamp * 1000);
+
+            // 检查日期是否有效
+            if (isNaN(date.getTime())) {
+                console.warn(`时间戳 "${timestampStr}" 无法转换为有效的日期。`);
+                return null;
+            }
+
+            // 格式化日期为 'YYYY-MM-DD HH-mm-SS'
+            const formattedDate = formatDate(date);
+            return formattedDate;
+        } catch (error) {
+            // 如果发生任何错误，输出警告并返回 null
+            console.warn(`转换时间 "${timestampStr}" 时发生错误:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * 将 Date 对象格式化为 'YYYY-MM-DD HH:mm:SS' 字符串。
+     * @param {Date} date - 要格式化的日期对象
+     * @returns {string} - 格式化后的日期字符串
+     */
+    function formatDate(date) {
+        const year = date.getFullYear();
+
+        // 月份从0开始，需要加1，并确保是两位数
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+
+        // 日期确保是两位数
+        const day = String(date.getDate()).padStart(2, "0");
+
+        // 小时、分钟和秒数确保是两位数
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        const seconds = String(date.getSeconds()).padStart(2, "0");
+
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    /**
+     * 全选/取消全选表格中的复选框
+     * @param {HTMLInputElement} source - 全选复选框元素
+     */
+    function toggleSelectAll(source) {
+        const checkboxes = document.querySelectorAll(".exam-select");
+        checkboxes.forEach((checkbox) => {
+            checkbox.checked = source.checked;
+        });
+    }
+
+    /**
+     * 删除选中的考试
+     */
+    function deleteSelectedExams() {
+        const selectedCheckboxes = document.querySelectorAll(
+            ".exam-select:checked"
+        );
+        if (selectedCheckboxes.length === 0) {
+            alert("请选择至少一个考试进行删除。");
+            return;
+        }
+        if (!confirm("确定要删除选中的考试吗？此操作不可逆。")) {
+            return;
+        }
+
+        const examIds = Array.from(selectedCheckboxes).map(
+            (checkbox) => checkbox.value
+        );
+
+        // 发送删除请求到服务器
+        fetch("/api/v1/teacher/deleteexams", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    examIds: examIds,
+                }),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                console.log(data);
+                // 重新加载考试表格或移除已删除的行
+                selectedCheckboxes.forEach((checkbox) => {
+                    const row = checkbox.closest("tr");
+                    row.parentNode.removeChild(row);
+                });
+                alert("删除成功。");
+            })
+            .catch((error) => {
+                console.error(error);
+                alert("删除失败，请稍后再试。");
+            });
+    }
+
+    /**
+     * 显示考试修改弹出框，并隐藏考试管理列表
+     * 需要先选择一个考试进行修改
+     */
+    function showExamModifyPrompt() {
+        const selectedCheckboxes = document.querySelectorAll(
+            ".exam-select:checked"
+        );
+        if (selectedCheckboxes.length !== 1) {
+            alert("请选择一个考试进行修改。");
+            return;
+        }
+        const examId = selectedCheckboxes[0].value;
+
+        // 发送请求获取考试详情
+        fetch(`/api/v1/teacher/getexam/${examId}`)
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    const exam = data.exam;
+                    // 填充修改表单
+                    document.getElementById("modify-exam-id").value = exam.id;
+                    document.getElementById("modify-exam-name").value = exam.name;
+                    // 假设服务器返回的时间是ISO格式字符串
+                    const startDate = new Date(exam.start_time * 1000);
+                    const endDate = new Date(exam.end_time * 1000);
+                    document.getElementById("modify-exam-start-date").value = startDate
+                        .toISOString()
+                        .split("T")[0];
+                    document.getElementById("modify-exam-start-time").value = startDate
+                        .toTimeString()
+                        .split(" ")[0]
+                        .substring(0, 5);
+                    document.getElementById("modify-exam-end-date").value = endDate
+                        .toISOString()
+                        .split("T")[0];
+                    document.getElementById("modify-exam-end-time").value = endDate
+                        .toTimeString()
+                        .split(" ")[0]
+                        .substring(0, 5);
+                    document.getElementById("modify-allow-answer-when-expired").value =
+                        exam.allow_answer_when_expired;
+                    document.getElementById("modify-random-questions").value =
+                        exam.random_question;
+
+                    // 显示修改弹出框并隐藏管理列表
+                    const examModifyPrompt =
+                        document.getElementById("exam-modify-prompt");
+                    const examManagementTeacher = document.getElementById(
+                        "exam-management-teacher"
+                    );
+                    examManagementTeacher.classList.add("fade-out"); // 添加淡出动画
+                    examManagementTeacher.style.display = "none"; // 隐藏考试管理列表
+                    examModifyPrompt.classList.remove("fade-out"); // 移除淡出动画
+                    examModifyPrompt.classList.add("fade-in"); // 添加淡入动画
+                    examModifyPrompt.style.display = ""; // 显示考试修改弹出框
+                } else {
+                    alert("无法获取考试详情，请稍后再试。");
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                alert("获取考试详情失败，请稍后再试。");
+            });
+    }
+
+    /**
+     * 导入修改考试的CSV文件
+     */
+    function importModifyCsvFile() {
+        document.getElementById("modify-csv-file").click();
+    }
+
+    /**
+     * 修改考试信息，提交表单数据到服务器
+     */
+    function modifyExam() {
+        const examId = document.getElementById("modify-exam-id").value;
+        const examName = document.getElementById("modify-exam-name").value;
+        const startDate = document.getElementById("modify-exam-start-date").value;
+        const startTime = document.getElementById("modify-exam-start-time").value;
+        const endDate = document.getElementById("modify-exam-end-date").value;
+        const endTime = document.getElementById("modify-exam-end-time").value;
+        const allowAnswerWhenExpired = document.getElementById(
+            "modify-allow-answer-when-expired"
+        ).value;
+        const randomQuestions = document.getElementById(
+            "modify-random-questions"
+        ).value;
+        const csvFile = document.getElementById("modify-csv-file").files[0];
+
+        if (!examId ||
+            !examName ||
+            !startDate ||
+            !startTime ||
+            !endDate ||
+            !endTime ||
+            !allowAnswerWhenExpired ||
+            !randomQuestions
+        ) {
+            alert("请填写所有必填字段。");
+            return;
+        }
+
+        let formData = new FormData();
+        formData.append("examId", examId);
+        formData.append("examName", examName);
+        formData.append("startDate", `${startDate} ${startTime}`);
+        formData.append("endDate", `${endDate} ${endTime}`);
+        formData.append("allowAnswerWhenExpired", allowAnswerWhenExpired);
+        formData.append("randomQuestions", randomQuestions);
+        if (csvFile) {
+            formData.append("csvFile", csvFile);
+        }
+
+        // 发送 POST 请求到服务器 API
+        fetch("/api/v1/teacher/modifyexam", {
+                method: "POST",
+                body: formData,
+            })
+            .then((response) => response.json()) // 解析响应为 JSON
+            .then((data) => {
+                if (data.success) {
+                    alert("修改成功。");
+                    // 重新加载考试表格或更新对应的行
+                    location.reload(); // 简单刷新页面
+                } else {
+                    alert("修改失败：" + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                alert("修改失败，请稍后再试。");
+            });
+    }
+
+    // 获取学生表单输入元素
+    const studentNameInput = document.getElementById("student-name");
+    const studentClassNameInput = document.getElementById("student-class-name");
+    const studentNumberInput = document.getElementById("student-number");
+
+    // 获取学生添加相关元素
+    const studentCsvFileInput = document.getElementById("student-csv-file");
+    const studentAddConfirmButton = document.getElementById(
+        "student-add-confirm"
+    );
+    let studentCsvFile = null;
+
+    // 全局变量
+    const modifyStudentNameInput = document.getElementById("modify-student-name");
+    const modifyStudentClassNameInput = document.getElementById("modify-student-class-name");
+    const modifyStudentNumberInput = document.getElementById("modify-student-number");
+    const resetPasswordCheckbox = document.getElementById("reset-password-checkbox");
+    const modifyStudentConfirmButton = document.getElementById("modify-student-confirm");
+    const newPasswordInput = document.getElementById("new-password");
+    const confirmPasswordInput = document.getElementById("confirm-password");
+    const passwordFields = document.getElementById("password-fields");
+
+    // 为添加学生表单字段添加输入事件监听器，控制确认按钮的启用状态
+    studentNameInput.addEventListener("input", toggleStudentAddConfirmButton);
+    studentClassNameInput.addEventListener(
+        "input",
+        toggleStudentAddConfirmButton
+    );
+    studentNumberInput.addEventListener("input", toggleStudentAddConfirmButton);
+    studentCsvFileInput.addEventListener("change", function() {
+        studentCsvFile = this.files[0];
+        document.getElementById(
+            "student-csv-file-name"
+        ).innerText = `当前选择的文件：${studentCsvFile.name}`;
+        toggleStudentAddConfirmButton();
+    });
+
+    /**
+     * 根据表单字段和文件选择状态，切换确认按钮的禁用状态
+     */
+    function toggleStudentAddConfirmButton() {
+        if (
+            studentCsvFile ||
+            studentNameInput.value.trim() !== "" &&
+            studentClassNameInput.value.trim() !== "" &&
+            studentNumberInput.value.trim() !== ""
+        ) {
+            studentAddConfirmButton.disabled = false; // 启用确认按钮
+        } else {
+            studentAddConfirmButton.disabled = true; // 禁用确认按钮
+        }
+    }
+
+    /**
+     * 触发文件选择对话框以导入学生CSV文件
+     */
+    function importStudentCsvFile() {
+        studentCsvFileInput.click();
+    }
+
+    /**
+     * 添加学生信息，提交表单数据到服务器
+     */
+    function addStudents() {
+        let formData = new FormData();
+        formData.append("studentName", studentNameInput.value);
+        formData.append("className", studentClassNameInput.value);
+        formData.append("number", studentNumberInput.value);
+        formData.append("csvFile", studentCsvFile);
+
+        // 发送 POST 请求到服务器 API
+        fetch("/api/v1/teacher/addstudents", {
+                method: "POST",
+                body: formData,
+            })
+            .then((response) => response.json()) // 解析响应为 JSON
+            .then((data) => {
+                if (data.success) {
+                    alert("学生导入成功。");
+                    // 重新加载学生表格或添加新行
+                    location.reload(); // 简单刷新页面
+                } else {
+                    alert("导入失败：" + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                alert("导入失败，请稍后再试。");
+            });
+    }
+
+    /**
+     * 全选/取消全选学生表格中的复选框
+     * @param {HTMLInputElement} source - 全选复选框元素
+     */
+    function toggleStudentSelectAll(source) {
+        const checkboxes = document.querySelectorAll(".student-select");
+        checkboxes.forEach((checkbox) => {
+            checkbox.checked = source.checked;
+        });
+    }
+
+    /**
+     * 删除选中的学生
+     */
+    function deleteSelectedStudents() {
+        const selectedCheckboxes = document.querySelectorAll(
+            ".student-select:checked"
+        );
+        if (selectedCheckboxes.length === 0) {
+            alert("请选择至少一个学生进行删除。");
+            return;
+        }
+        if (!confirm("确定要删除选中的学生吗？此操作不可逆。")) {
+            return;
+        }
+
+        const studentIds = Array.from(selectedCheckboxes).map(
+            (checkbox) => checkbox.value
+        );
+
+        // 发送删除请求到服务器
+        fetch("/api/v1/teacher/deletestudents", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    studentIds: studentIds,
+                }),
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    alert("删除成功。");
+                    // 从表格中移除已删除的行
+                    selectedCheckboxes.forEach((checkbox) => {
+                        const row = checkbox.closest("tr");
+                        row.parentNode.removeChild(row);
+                    });
+                } else {
+                    alert("删除失败：" + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                alert("删除失败，请稍后再试。");
+            });
+    }
+
+    /**
+     * 显示学生添加弹出框，并隐藏学生管理列表
+     */
+    function showStudentAddPrompt() {
+        const studentAddPrompt = document.getElementById("student-add-prompt");
+        const studentManagementTeacher = document.getElementById(
+            "student-management-teacher"
+        );
+        studentManagementTeacher.classList.add("fade-out"); // 添加淡出动画
+        studentManagementTeacher.style.display = "none"; // 隐藏学生管理列表
+        studentAddPrompt.classList.remove("fade-out"); // 移除淡出动画
+        studentAddPrompt.classList.add("fade-in"); // 添加淡入动画
+        studentAddPrompt.style.display = ""; // 显示学生添加弹出框
+    }
+
+    /**
+     * 返回到学生管理列表，并隐藏学生添加弹出框和修改弹出框
+     */
+    function returnToStudentManagement() {
+        const studentAddPrompt = document.getElementById("student-add-prompt");
+        const studentModifyPrompt = document.getElementById(
+            "student-modify-prompt"
+        );
+        const studentManagementTeacher = document.getElementById(
+            "student-management-teacher"
+        );
+
+        if (studentAddPrompt.style.display !== "none") {
+            studentAddPrompt.classList.add("fade-out"); // 添加淡出动画
+            studentAddPrompt.style.display = "none"; // 隐藏学生添加弹出框
+        }
+
+        if (studentModifyPrompt.style.display !== "none") {
+            studentModifyPrompt.classList.add("fade-out"); // 添加淡出动画
+            studentModifyPrompt.style.display = "none"; // 隐藏学生修改弹出框
+        }
+
+        studentManagementTeacher.classList.remove("fade-out"); // 移除淡出动画
+        studentManagementTeacher.classList.add("fade-in"); // 添加淡入动画
+        studentManagementTeacher.style.display = ""; // 显示学生管理列表
+    }
+
+    /**
+     * 显示学生修改弹出框，并隐藏学生管理列表
+     * 需要先选择一个学生进行修改
+     */
+    function showStudentModifyPrompt() {
+        const selectedCheckboxes = document.querySelectorAll(".student-select:checked");
+        if (selectedCheckboxes.length !== 1) {
+            alert("请选择一个学生进行修改。");
+            return;
+        }
+        const studentId = selectedCheckboxes[0].value;
+
+        // 发送请求获取学生详情
+        fetch(`/api/v1/teacher/getstudent/${studentId}`)
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    const student = data.student;
+                    // 填充修改表单
+                    document.getElementById("modify-student-id").value = student.id;
+                    document.getElementById("modify-student-name").value = student.name;
+                    document.getElementById("modify-student-class-name").value = student.class_name;
+                    document.getElementById("modify-student-number").value = student.number;
+
+                    // 重置密码选项
+                    resetPasswordCheckbox.checked = false;
+                    passwordFields.style.display = "none"; // 隐藏密码输入框
+
+                    // 清除之前选择的文件
+                    modifyStudentCsvFile = null;
+                    document.getElementById("modify-student-csv-file-name").innerText = "请选择要导入的学生文件（csv格式）";
+                    modifyStudentConfirmButton.disabled = false; // 根据需求可以调整是否需要文件
+
+                    // 清空密码字段
+                    newPasswordInput.value = "";
+                    confirmPasswordInput.value = "";
+
+                    // 显示修改弹出框并隐藏管理列表
+                    const studentModifyPrompt = document.getElementById("student-modify-prompt");
+                    const studentManagementTeacher = document.getElementById("student-management-teacher");
+                    studentManagementTeacher.classList.add("fade-out"); // 添加淡出动画
+                    studentManagementTeacher.style.display = "none"; // 隐藏学生管理列表
+                    studentModifyPrompt.classList.remove("fade-out"); // 移除淡出动画
+                    studentModifyPrompt.classList.add("fade-in"); // 添加淡入动画
+                    studentModifyPrompt.style.display = ""; // 显示学生修改弹出框
+                } else {
+                    alert("无法获取学生详情，请稍后再试。");
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                alert("获取学生详情失败，请稍后再试。");
+            });
+    }
+
+    /**
+     * 根据表单字段和文件选择状态，切换修改确认按钮的禁用状态
+     */
+    function toggleStudentModifyConfirmButton() {
+        if (resetPasswordCheckbox.checked) {
+            // 当勾选重置密码时，必须填写新密码和确认密码
+            const newPassword = newPasswordInput.value.trim();
+            const confirmPassword = confirmPasswordInput.value.trim();
+            if (newPassword !== "" && confirmPassword !== "" && newPassword === confirmPassword) {
+                modifyStudentConfirmButton.disabled = false;
+            } else {
+                modifyStudentConfirmButton.disabled = true;
+            }
+        } else {
+            // 当未勾选重置密码时，只需填写必填字段
+            if (
+                modifyStudentNameInput.value.trim() !== "" &&
+                modifyStudentClassNameInput.value.trim() !== "" &&
+                modifyStudentNumberInput.value.trim() !== ""
+            ) {
+                modifyStudentConfirmButton.disabled = false;
+            } else {
+                modifyStudentConfirmButton.disabled = true;
+            }
+        }
+    }
+
+    // 监听重置密码复选框变化事件
+    resetPasswordCheckbox.addEventListener("change", function() {
+        if (this.checked) {
+            passwordFields.style.display = "block"; // 显示密码输入框
+        } else {
+            passwordFields.style.display = "none"; // 隐藏密码输入框
+            newPasswordInput.value = "";
+            confirmPasswordInput.value = "";
+        }
+        toggleStudentModifyConfirmButton();
+    });
+
+    // 监听新密码和确认密码输入框的输入事件
+    newPasswordInput.addEventListener("input", toggleStudentModifyConfirmButton);
+    confirmPasswordInput.addEventListener("input", toggleStudentModifyConfirmButton);
+
+    // 为修改学生表单字段添加输入事件监听器，控制确认按钮的启用状态
+    modifyStudentNameInput.addEventListener("input", toggleStudentModifyConfirmButton);
+    modifyStudentClassNameInput.addEventListener("input", toggleStudentModifyConfirmButton);
+    modifyStudentNumberInput.addEventListener("input", toggleStudentModifyConfirmButton);
+
+    /**
+     * 修改学生信息，提交表单数据到服务器
+     */
+    function modifyStudent() {
+        const studentId = document.getElementById("modify-student-id").value;
+        const studentName = modifyStudentNameInput.value.trim();
+        const studentClassName = modifyStudentClassNameInput.value.trim();
+        const studentNumber = modifyStudentNumberInput.value.trim();
+        const resetPassword = resetPasswordCheckbox.checked;
+        const csvFile = modifyStudentCsvFile;
+
+        if (!studentId ||
+            studentName === "" ||
+            studentClassName === "" ||
+            studentNumber === ""
+        ) {
+            alert("请填写所有必填字段。");
+            return;
+        }
+
+        if (resetPassword) {
+            const newPassword = newPasswordInput.value.trim();
+            const confirmPassword = confirmPasswordInput.value.trim();
+            if (newPassword === "" || confirmPassword === "") {
+                alert("请填写新密码和确认密码。");
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                alert("新密码和确认密码不一致。");
+                return;
+            }
+        }
+
+        let formData = new FormData();
+        formData.append("studentId", studentId);
+        formData.append("name", studentName);
+        formData.append("className", studentClassName);
+        formData.append("number", studentNumber);
+        formData.append("resetPassword", resetPassword ? "1" : "0");
+        if (resetPassword) {
+            formData.append("newPassword", newPasswordInput.value.trim());
+            // 视需求是否需要将确认密码发送到服务器
+        }
+        if (csvFile) {
+            formData.append("csvFile", csvFile);
+        }
+
+        // 发送 POST 请求到服务器 API
+        fetch("/api/v1/teacher/modifystudent", {
+                method: "POST",
+                body: formData,
+            })
+            .then((response) => response.json()) // 解析响应为 JSON
+            .then((data) => {
+                if (data.success) {
+                    alert("学生信息修改成功。");
+                    // 重新加载学生表格或更新对应的行
+                    location.reload(); // 简单刷新页面
+                } else {
+                    alert("修改失败：" + data.message);
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                alert("修改失败，请稍后再试。");
+            });
+    }
+
+    /**
+     * 查看选定考试的成绩
+     */
+    function viewExamScores() {
+        const selectedCheckboxes = document.querySelectorAll(
+            ".exam-select:checked"
+        );
+        if (selectedCheckboxes.length !== 1) {
+            alert("请选择一个考试以查看成绩。");
+            return;
+        }
+        const examId = selectedCheckboxes[0].value;
+
+        // 发送请求获取考试成绩
+        fetch(`/api/v1/teacher/getexamscores/${examId}`)
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.success) {
+                    const exam = data.exam;
+                    const scores = data.scores;
+
+                    // 填充考试信息
+                    document.getElementById("exam-name-title").innerText = exam.name;
+                    document.getElementById("exam-start-time").innerText = new Date(
+                        exam.start_time * 1000
+                    ).toLocaleString();
+                    document.getElementById("exam-end-time").innerText = new Date(
+                        exam.end_time * 1000
+                    ).toLocaleString();
+                    document.getElementById("exam-allow-expired").innerText =
+                        exam.allow_answer_when_expired ? "是" : "否";
+                    document.getElementById("exam-random-question").innerText =
+                        exam.random_question ? "是" : "否";
+                    document.getElementById("average-score").innerText =
+                        exam.average_score || "N/A";
+
+                    // 填充成绩表格
+                    const scoresTableBody = document.getElementById("scores-table-body");
+                    scoresTableBody.innerHTML = ""; // 清空之前的数据
+                    scores.forEach((score, index) => {
+                        const row = document.createElement("tr");
+
+                        const indexCell = document.createElement("th");
+                        indexCell.scope = "row";
+                        indexCell.innerText = index + 1;
+                        row.appendChild(indexCell);
+
+                        const nameCell = document.createElement("td");
+                        nameCell.innerText = score.name;
+                        row.appendChild(nameCell);
+
+                        const numberCell = document.createElement("td");
+                        numberCell.innerText = score.number;
+                        row.appendChild(numberCell);
+
+                        const examScoreCell = document.createElement("td");
+                        examScoreCell.innerText = score.score;
+                        row.appendChild(examScoreCell);
+
+                        const expiredCell = document.createElement("td");
+                        expiredCell.innerText = score.expired_flag ? "是" : "否";
+                        row.appendChild(expiredCell);
+
+                        scoresTableBody.appendChild(row);
+                    });
+
+                    // 显示成绩查看容器，并隐藏考试管理容器
+                    const examScoresView = document.getElementById("exam-scores-view");
+                    const examManagementTeacher = document.getElementById(
+                        "exam-management-teacher"
+                    );
+                    examManagementTeacher.classList.add("fade-out"); // 添加淡出动画
+                    examManagementTeacher.style.display = "none"; // 隐藏考试管理列表
+                    examScoresView.classList.remove("fade-out"); // 移除淡出动画
+                    examScoresView.classList.add("fade-in"); // 添加淡入动画
+                    examScoresView.style.display = ""; // 显示成绩查看容器
+                } else {
+                    alert("无法获取考试成绩，请稍后再试。");
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+                alert("获取考试成绩失败，请稍后再试。");
+            });
+    }
+
+    function addEventListenerToExamEdit() {
+        // 获取“考试修改框”容器
+        const modifyPrompt = document.getElementById('exam-modify-prompt');
+        if (!modifyPrompt) return;
+
+        // 获取所有需要监控的输入框和选择框，排除文件输入和隐藏输入
+        const formControls = modifyPrompt.querySelectorAll('input:not([type="file"]):not([type="hidden"]), select');
+
+        // 获取“确定修改”按钮
+        const confirmButton = modifyPrompt.querySelector('#modify-exam-confirm');
+
+        // 存储原始值
+        const originalValues = {};
+        formControls.forEach(control => {
+            originalValues[control.id] = control.value;
+        });
+
+        // 检查是否有任何字段的值发生变化
+        function checkForChanges() {
+            let hasChanged = false;
+            formControls.forEach(control => {
+                if (control.value !== originalValues[control.id]) {
+                    hasChanged = true;
+                }
+            });
+            // 根据是否有变化启用或禁用“确定修改”按钮
+            confirmButton.disabled = !hasChanged;
+        }
+
+        // 为每个可填写控件添加事件监听器
+        formControls.forEach(control => {
+            control.addEventListener('input', checkForChanges);
+            control.addEventListener('change', checkForChanges); // 适用于选择框
+        });
+    }
+
+
+    // 当文档加载完成后，运行下面的函数
+    document.addEventListener("DOMContentLoaded", function() {
+        adjust_elements(); // 调整考试框的位置
+        hide_nav_items(); // 隐藏不属于当前用户角色相关的顶栏链接
+        convertTimestampsInExamTable(); // 转换时间戳为可阅读的格式
+        addEventListenerToExamEdit()
+    });
+</script>

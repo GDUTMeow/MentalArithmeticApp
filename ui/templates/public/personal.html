@@ -1,0 +1,126 @@
+<!-- 个人信息查看/修改页面 -->
+<div class="container" id="personal-info" style="display: block;">
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <!-- 左侧个人信息卡片 -->
+                <div class="col-md-4">
+                    <div class="card text-center">
+                        <div class="card-header">个人信息</div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ user.name if user is defined else "Pesy Wu" }}</h5>
+                            <p class="card-text">
+                                用户名：{{ user.username if user is defined else "GamerNoTitle" }}<br> 学号：{{ user.number if user is defined else "44666814" }}<br> 班级：{{ user.class_name if user is defined else "计算机类8班" }}<br> 角色： {% if user is defined %} {%
+                                if user.role == 0 %} 学生 {% elif user.role == 1 %} 教师 {% else %} 未知 {% endif %} {% else %} 未知 {% endif %}
+                            </p>
+                        </div>
+                        <div class="card-footer">
+                            <!-- 可选：添加其他信息或操作按钮 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧修改密码表单 -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <section class="mb-4">
+                                <!-- Section heading -->
+                                <h2 class="h1-responsive font-weight-bold text-center my-4">
+                                    修改密码
+                                </h2>
+                                <!-- Section description -->
+                                <p class="text-center w-responsive mx-auto mb-5">
+                                    请在下方输入您的原密码，并设置新密码。
+                                </p>
+                                <!-- 原密码 -->
+                                <div class="form-floating mb-3">
+                                    <input type="password" id="original-password" class="form-control" placeholder="原密码" />
+                                    <label for="original-password">原密码</label>
+                                </div>
+                                <!-- 新密码 -->
+                                <div class="form-floating mb-3">
+                                    <input type="password" id="password" class="form-control" placeholder="新密码" />
+                                    <label for="password">新密码</label>
+                                </div>
+                                <!-- 确认新密码 -->
+                                <div class="form-floating mb-3">
+                                    <input type="password" id="confirm-password" class="form-control" placeholder="确认新密码" />
+                                    <label for="confirm-password">确认新密码</label>
+                                </div>
+                                <!-- 修改密码按钮 -->
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-success btn-rounded btn-lg" id="modify-password-button" onclick="doPasswordModify()">
+                                            确定修改
+                                        </button>
+                                </div>
+                                <!-- 提示信息 -->
+                                <div class="mt-3">
+                                    <span id="password-feedback" class="text-danger"></span>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript 代码 -->
+    <script>
+        /**
+         * 简单的密码验证函数（仅示例，实际应通过服务器验证）
+         * 假设 storedOriginalPassword 是已哈希的密码
+         * 这里仅比较明文，实际应用中请使用安全的哈希验证
+         */
+        function verifyOriginalPassword(inputPassword) {
+            return inputPassword === "{{ user.hashpass if user is defined else '' }}";
+        }
+
+        function doPasswordModify() {
+            const originalPasswordInput = document.getElementById('original-password');
+            const newPasswordInput = document.getElementById('new-password');
+            const confirmNewPasswordInput = document.getElementById('confirm-new-password');
+            const modifyPasswordButton = document.getElementById('modify-password-button');
+            const passwordFeedback = document.getElementById('password-feedback');
+
+            const originalPassword = originalPasswordInput.value.trim();
+            const newPassword = newPasswordInput.value.trim();
+
+            // 验证原始密码
+            if (!verifyOriginalPassword(originalPassword)) {
+                passwordFeedback.textContent = '原密码不正确。';
+                return;
+            }
+
+            // 发送修改密码请求到服务器
+            fetch("/api/v1/user/modifypassword", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: "{{ user.id if user is defined else 'UUID4' }}", // 用户ID
+                        originalPassword: originalPassword,
+                        newPassword: newPassword
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("密码修改成功！");
+                        // 清空输入框
+                        originalPasswordInput.value = '';
+                        newPasswordInput.value = '';
+                        confirmNewPasswordInput.value = '';
+                        modifyPasswordButton.disabled = true;
+                    } else {
+                        alert("密码修改失败：" + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("密码修改失败，请稍后再试。");
+                });
+        }
+    </script>

@@ -1,0 +1,116 @@
+<head>
+  {% include "public/base.html" %}
+  <style>
+    .nav-link {
+      color: #fff;
+    }
+    /* 封面样式 */
+
+    #introCarousel,
+    .carousel-inner,
+    .carousel-item,
+    .carousel-item.active {
+      height: 100vh;
+    }
+
+    .carousel-item:nth-child(1) {
+      background-image: url("{{ url_for('static', filename='img/math.webp' )}}");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center center;
+    }
+
+    @media (min-width: 100%) {
+      #introCarousel {
+        margin-top: -58.59px;
+      }
+      #introCarousel,
+      .carousel-inner,
+      .carousel-item,
+      .carousel-item.active {
+        height: 50vh;
+      }
+    }
+
+    .navbar .nav-link {
+      color: #fff !important;
+    }
+
+    .dismiss-cover-btn:hover {
+      background-color: #8481d4;
+    }
+
+    #cover-container {
+      opacity: 1;
+      transition: opacity 1s ease;
+    }
+    /* 定义淡出动画 */
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+      }
+    }
+    /* 定义淡入动画 */
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+    /* 应用淡出动画的类 */
+
+    .fade-out {
+      animation: fadeOut 1s forwards;
+    }
+    /* 应用淡入动画的类 */
+
+    .fade-in {
+      animation: fadeIn 1s forwards;
+    }
+    /* 定义从上往下滑出的动画 */
+
+    @keyframes slideOutDown {
+      from {
+        transform: translateY(0);
+      }
+      to {
+        transform: translateY(100%);
+      }
+    }
+    /* 应用滑出动画的类 */
+
+    .slide-out-down {
+      animation: slideOutDown 1s forwards ease-in-out;
+    }
+
+    .btn-color-dashboard-primary {
+      background-color: #8481d4;
+      color: #fff;
+    }
+
+    .btn-color-dashboard-primary:hover {
+      background-color: #81bdd4;
+    }
+    /* ::-webkit-datetime-edit-text,
+         ::-webkit-datetime-edit-year-field,
+         ::-webkit-datetime-edit-month-field,
+         ::-webkit-datetime-edit-day-field,
+         ::-webkit-datetime-edit-hour-field,
+         ::-webkit-datetime-edit-minute-field {
+            color: transparent;
+        } */
+  </style>
+</head>
+
+<body>
+  {%include "public/nav.html" %} {% include "public/cover.html" %} {% include
+  "student/student.html" %} {% include "teacher/exam.html" %} {% include
+  "teacher/student.html" %} {% include "public/personal.html" %} {% include "script.html" %}
+</body>

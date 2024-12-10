@@ -1,0 +1,27 @@
+    <!-- 主页Cover -->
+    <div class="col-12" id="cover-container">
+        <div id="introCarousel" class="carousel slide carousel-fade shadow-2-strong pointer-event" data-mdb-carousel-init="" data-mdb-carousel-initialized="true">
+
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <div class="mask" style="
+                            background: linear-gradient(
+                            45deg,
+                            #1decc5b3,
+                            #5b0ed6b3 100%
+                            );
+                            ">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <div class="text-white text-center" data-mdb-theme="dark">
+                                <h2>口算速算</h2>
+                                <hr>
+                                <p>欢迎回来！{{ user and user.name or "Pesy Wu" }} ({{ user and user.username or "GamerNoTitle" }})
+                                </p>
+                                <a type="button" class="btn btn-outline-light btn-lg m-2 dismiss-cover-btn" href="#" role="button" id="dismiss-cover-btn" onclick="dismiss_cover()">点击进入</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
