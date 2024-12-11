@@ -1,22 +1,3 @@
-    <!-- 考试入口 -->
-    <div class="container" id="exam-entrance" style="display: none">
-        <div class="row gx-1">
-            <div class="col-12">
-                <div class="card text-center border border-primary shadow-0">
-                    <div class="card-body">
-                        <h5 class="card-title" style="padding-bottom: 10px">{{ exam and exam.metadata and exam.metadata.title or "这是一场不存在的考试" }}
-                        </h5>
-                        <p class="card-text">
-                            {{ exam and exam.metadata and exam.metadata.description or "description" }}
-                        </p>
-                        <button type="button" class="btn btn-primary enter-exam btn-color-dashboard-primary">进入考试</button>
-                    </div>
-                    <div class="card-footer">剩余时间：{{ exam.metadata.time_left|default(56562) }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- 成绩表单 -->
     <div class="container" id="scores-list-student" style="display: none">
         <div class="card">

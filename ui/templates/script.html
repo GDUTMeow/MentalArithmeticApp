@@ -47,11 +47,16 @@
      * 调整页面中各个元素的位置，使其根据窗口高度动态设置顶部填充
      */
     function adjust_elements() {
-
         // 考试入口元素
         const exam_entrance = document.getElementById("exam-entrance");
         const height = window.innerHeight;
         exam_entrance.style.paddingTop = height * 0.3 + "px"; // 设置顶部填充为窗口高度的30%
+
+        const exam_container = document.getElementById("exam-container");
+        exam_entrance.style.paddingTop = height * 0.3 + "px"; // 设置顶部填充为窗口高度的30%
+
+        const exam_finish_prompt = document.getElementById("exam-finish-prompt");
+        exam_finish_prompt.style.paddingTop = height * 0.3 + "px"; // 设置顶部填充为窗口高度的30%
 
         // 学生成绩列表
         const scores_list_student = document.getElementById("scores-list-student");
@@ -84,9 +89,7 @@
         student_modify_prompt.style.paddingTop = height * 0.15 + "px";
 
         // 个人信息窗口
-        const personal_information = document.getElementById(
-            "personal-info"
-        )
+        const personal_information = document.getElementById("personal-info");
         personal_information.style.paddingTop = height * 0.15 + "px";
     }
 
@@ -153,13 +156,7 @@
         cover.addEventListener("animationend", function handler() {
             // 隐藏覆盖层
             cover.style.display = "none";
-            if (element.id == "exam-entrance") {
-                // 显示考试入口
-                element.style.display = "flex";
-            } else {
-                // 显示考试管理
-                element.style.display = "";
-            }
+            element.style.display = "";
 
             // 添加淡入动画类
             element.classList.add("fade-in");
@@ -191,7 +188,9 @@
         const examAddPrompt = document.getElementById("exam-add-prompt");
         const examEditPrompt = document.getElementById("exam-modify-prompt");
         const examScoresView = document.getElementById("exam-scores-view");
-        const examManagementTeacher = document.getElementById("exam-management-teacher");
+        const examManagementTeacher = document.getElementById(
+            "exam-management-teacher"
+        );
         examScoresView.classList.add("fade-out"); // 添加淡出动画
         examScoresView.style.display = "none"; // 隐藏成绩查看容器
         examAddPrompt.classList.add("fade-out"); // 添加淡出动画
@@ -211,6 +210,8 @@
         var hide_list = [
             "cover-container",
             "exam-entrance",
+            "exam-finish-prompt",
+            "exam-container"
             "scores-list-student",
             "exam-management-teacher",
             "exam-add-prompt",
@@ -223,6 +224,9 @@
         ];
         var display_mode_block = ["scores-list-student", "personal-info"];
         var display_mode_empty = [
+            "exam-entrance",
+            "exam-finish-prompt",
+            "exam-container",
             "exam-management-teacher",
             "exam-add-prompt",
             "exam-modify-prompt",
@@ -678,10 +682,18 @@
 
     // 全局变量
     const modifyStudentNameInput = document.getElementById("modify-student-name");
-    const modifyStudentClassNameInput = document.getElementById("modify-student-class-name");
-    const modifyStudentNumberInput = document.getElementById("modify-student-number");
-    const resetPasswordCheckbox = document.getElementById("reset-password-checkbox");
-    const modifyStudentConfirmButton = document.getElementById("modify-student-confirm");
+    const modifyStudentClassNameInput = document.getElementById(
+        "modify-student-class-name"
+    );
+    const modifyStudentNumberInput = document.getElementById(
+        "modify-student-number"
+    );
+    const resetPasswordCheckbox = document.getElementById(
+        "reset-password-checkbox"
+    );
+    const modifyStudentConfirmButton = document.getElementById(
+        "modify-student-confirm"
+    );
     const newPasswordInput = document.getElementById("new-password");
     const confirmPasswordInput = document.getElementById("confirm-password");
     const passwordFields = document.getElementById("password-fields");
@@ -707,9 +719,9 @@
     function toggleStudentAddConfirmButton() {
         if (
             studentCsvFile ||
-            studentNameInput.value.trim() !== "" &&
-            studentClassNameInput.value.trim() !== "" &&
-            studentNumberInput.value.trim() !== ""
+            (studentNameInput.value.trim() !== "" &&
+                studentClassNameInput.value.trim() !== "" &&
+                studentNumberInput.value.trim() !== "")
         ) {
             studentAddConfirmButton.disabled = false; // 启用确认按钮
         } else {
@@ -861,7 +873,9 @@
      * 需要先选择一个学生进行修改
      */
     function showStudentModifyPrompt() {
-        const selectedCheckboxes = document.querySelectorAll(".student-select:checked");
+        const selectedCheckboxes = document.querySelectorAll(
+            ".student-select:checked"
+        );
         if (selectedCheckboxes.length !== 1) {
             alert("请选择一个学生进行修改。");
             return;
@@ -877,8 +891,10 @@
                     // 填充修改表单
                     document.getElementById("modify-student-id").value = student.id;
                     document.getElementById("modify-student-name").value = student.name;
-                    document.getElementById("modify-student-class-name").value = student.class_name;
-                    document.getElementById("modify-student-number").value = student.number;
+                    document.getElementById("modify-student-class-name").value =
+                        student.class_name;
+                    document.getElementById("modify-student-number").value =
+                        student.number;
 
                     // 重置密码选项
                     resetPasswordCheckbox.checked = false;
@@ -886,7 +902,8 @@
 
                     // 清除之前选择的文件
                     modifyStudentCsvFile = null;
-                    document.getElementById("modify-student-csv-file-name").innerText = "请选择要导入的学生文件（csv格式）";
+                    document.getElementById("modify-student-csv-file-name").innerText =
+                        "请选择要导入的学生文件（csv格式）";
                     modifyStudentConfirmButton.disabled = false; // 根据需求可以调整是否需要文件
 
                     // 清空密码字段
@@ -894,8 +911,12 @@
                     confirmPasswordInput.value = "";
 
                     // 显示修改弹出框并隐藏管理列表
-                    const studentModifyPrompt = document.getElementById("student-modify-prompt");
-                    const studentManagementTeacher = document.getElementById("student-management-teacher");
+                    const studentModifyPrompt = document.getElementById(
+                        "student-modify-prompt"
+                    );
+                    const studentManagementTeacher = document.getElementById(
+                        "student-management-teacher"
+                    );
                     studentManagementTeacher.classList.add("fade-out"); // 添加淡出动画
                     studentManagementTeacher.style.display = "none"; // 隐藏学生管理列表
                     studentModifyPrompt.classList.remove("fade-out"); // 移除淡出动画
@@ -919,7 +940,11 @@
             // 当勾选重置密码时，必须填写新密码和确认密码
             const newPassword = newPasswordInput.value.trim();
             const confirmPassword = confirmPasswordInput.value.trim();
-            if (newPassword !== "" && confirmPassword !== "" && newPassword === confirmPassword) {
+            if (
+                newPassword !== "" &&
+                confirmPassword !== "" &&
+                newPassword === confirmPassword
+            ) {
                 modifyStudentConfirmButton.disabled = false;
             } else {
                 modifyStudentConfirmButton.disabled = true;
@@ -952,12 +977,24 @@
 
     // 监听新密码和确认密码输入框的输入事件
     newPasswordInput.addEventListener("input", toggleStudentModifyConfirmButton);
-    confirmPasswordInput.addEventListener("input", toggleStudentModifyConfirmButton);
+    confirmPasswordInput.addEventListener(
+        "input",
+        toggleStudentModifyConfirmButton
+    );
 
     // 为修改学生表单字段添加输入事件监听器，控制确认按钮的启用状态
-    modifyStudentNameInput.addEventListener("input", toggleStudentModifyConfirmButton);
-    modifyStudentClassNameInput.addEventListener("input", toggleStudentModifyConfirmButton);
-    modifyStudentNumberInput.addEventListener("input", toggleStudentModifyConfirmButton);
+    modifyStudentNameInput.addEventListener(
+        "input",
+        toggleStudentModifyConfirmButton
+    );
+    modifyStudentClassNameInput.addEventListener(
+        "input",
+        toggleStudentModifyConfirmButton
+    );
+    modifyStudentNumberInput.addEventListener(
+        "input",
+        toggleStudentModifyConfirmButton
+    );
 
     /**
      * 修改学生信息，提交表单数据到服务器
@@ -1115,25 +1152,27 @@
 
     function addEventListenerToExamEdit() {
         // 获取“考试修改框”容器
-        const modifyPrompt = document.getElementById('exam-modify-prompt');
+        const modifyPrompt = document.getElementById("exam-modify-prompt");
         if (!modifyPrompt) return;
 
         // 获取所有需要监控的输入框和选择框，排除文件输入和隐藏输入
-        const formControls = modifyPrompt.querySelectorAll('input:not([type="file"]):not([type="hidden"]), select');
+        const formControls = modifyPrompt.querySelectorAll(
+            'input:not([type="file"]):not([type="hidden"]), select'
+        );
 
         // 获取“确定修改”按钮
-        const confirmButton = modifyPrompt.querySelector('#modify-exam-confirm');
+        const confirmButton = modifyPrompt.querySelector("#modify-exam-confirm");
 
         // 存储原始值
         const originalValues = {};
-        formControls.forEach(control => {
+        formControls.forEach((control) => {
             originalValues[control.id] = control.value;
         });
 
         // 检查是否有任何字段的值发生变化
         function checkForChanges() {
             let hasChanged = false;
-            formControls.forEach(control => {
+            formControls.forEach((control) => {
                 if (control.value !== originalValues[control.id]) {
                     hasChanged = true;
                 }
@@ -1143,18 +1182,46 @@
         }
 
         // 为每个可填写控件添加事件监听器
-        formControls.forEach(control => {
-            control.addEventListener('input', checkForChanges);
-            control.addEventListener('change', checkForChanges); // 适用于选择框
+        formControls.forEach((control) => {
+            control.addEventListener("input", checkForChanges);
+            control.addEventListener("change", checkForChanges); // 适用于选择框
         });
     }
 
+    function logout() {
+        fetch("/api/v1/user/logout", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+            })
+            .then((response) => {
+                if (!response.ok) {
+                    // 尽管失败，但是还是清除cookie，并返回登录页面
+                    document.cookie = "";
+                    console.error("注销失败:", response.statusText);
+                }
+            })
+            .catch((error) => {
+                // 处理网络或其他错误
+                document.cookie = "";
+                console.error("请求出错:", error);
+            })
+            .finally(() => {
+                document.cookie = ""; // 清空cookie
+                // 无论请求成功与否，等待 500 毫秒后重定向到主页
+                setTimeout(() => {
+                    window.location.href = "/";
+                }, 500);
+            });
+    }
 
     // 当文档加载完成后，运行下面的函数
     document.addEventListener("DOMContentLoaded", function() {
         adjust_elements(); // 调整考试框的位置
         hide_nav_items(); // 隐藏不属于当前用户角色相关的顶栏链接
         convertTimestampsInExamTable(); // 转换时间戳为可阅读的格式
-        addEventListenerToExamEdit()
+        addEventListenerToExamEdit();
     });
 </script>
