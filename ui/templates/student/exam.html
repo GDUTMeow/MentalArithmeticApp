@@ -10,7 +10,7 @@
                     <p class="card-text">
                         {{ exam and exam.metadata and exam.metadata.description or "description" }}
                     </p>
-                    <button type="button" class="btn btn-primary enter-exam btn-color-dashboard-primary">
+                    <button type="button" class="btn btn-primary enter-exam btn-color-dashboard-primary" onclick="initializeExam()">
                         进入考试
                     </button>
                 </div>
@@ -25,7 +25,7 @@
 <!-- 成绩表单 -->
 <div class="container" id="exam-finish-prompt" style="display: none">
     <div class="card mt-4">
-        <div class="card-body">
+        <div class="card-body" align="center">
             <h4 class="card-title">考试结束</h4>
             <p class="card-text" id="exam-result-msg"></p>
         </div>
@@ -37,12 +37,24 @@
     <div class="card mt-4">
         <div class="card-body">
             <h4 class="card-title" id="exam-name">考试名称</h4>
-            <div class="question-box mt-4 mb-4">
-                <span id="num1">13</span>
-                <span class="operator" id="operator">?</span>
-                <span id="num2">10</span>
+            <div class="question-box mt-4 mb-4" align="center">
+                <span id="num1" style="font-size: -webkit-xxx-large; padding-right: 5px">13</span>
+                <span class="operator" id="operator" style="
+            font-size: -webkit-xxx-large;
+            padding-right: 5px;
+            padding-left: 5px;
+          ">?</span>
+                <span id="num2" style="
+            font-size: -webkit-xxx-large;
+            padding-left: 5px;
+            padding-right: 5px;
+          ">10</span>
+                <span id="equals" style="
+                          font-size: -webkit-xxx-large;
+                          padding-left: 5px;
+                        ">= ?</span>
             </div>
-            <p class="text-center text-muted">若有小数，请精准到小数点后两位</p>
+            <p class="text-center text-muted" style="font: bold;">若有小数，请精准到小数点后两位</p>
             <div class="input-group mb-3">
                 <input type="text" class="form-control" placeholder="您的答案" id="answer-input" />
             </div>
@@ -85,7 +97,14 @@
                 examData = data.data;
                 examId = examData.id;
                 document.getElementById("exam-name").textContent = examData.name;
-
+                const examEntrance = document.getElementById("exam-entrance");
+                examEntrance.classList.add("fade-out");
+                examEntrance.classList.remove("fade-in");
+                examEntrance.style.display = "none";
+                const examContainer = document.getElementById("exam-container");
+                examContainer.classList.remove("fade-out");
+                examContainer.classList.add("fade-in");
+                examContainer.style.display = "";
                 answers = new Array(examData.questions.count).fill(null);
 
                 // 显示第一题
@@ -169,7 +188,7 @@
 
             if (result.success) {
                 document.getElementById("exam-result-msg").textContent =
-                    "提交成功！请等待老师评分或查看最终成绩。";
+                    "提交成功！请前往成绩查看页面查看最终成绩。";
             } else {
                 document.getElementById("exam-result-msg").textContent =
                     "提交失败，请稍后重试。";

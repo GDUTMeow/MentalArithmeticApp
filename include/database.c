@@ -344,21 +344,40 @@ int query_question_info(const char *key, const char *content, struct SqlResponse
 }
 
 /**
- * @brief 根据考试ID和用户ID查询成绩信息，并将结果存储到 SqlResponseScore 结构体中
+ * @brief 根据用户传递的key和content查询成绩信息，并将结果存储到 SqlResponseScore 结构体中
  *
- * @param exam_id 考试ID，查询指定考试的成绩
- * @param user_id 用户ID，查询指定用户的成绩
+ * @param key 查询的键，可能是exam_id、user_id或其他字段
+ * @param content 查询的内容，具体的exam_id或user_id
  * @param score_to_return 查询结果返回的 SqlResponseScore 结构体类型变量
  *
  * @return int 函数执行成功与否，成功返回0，否则为1
  */
-int query_score_info(const char *exam_id, const char *user_id, struct SqlResponseScore *score_to_return)
+int query_score_info(const char *key, const char *content, struct SqlResponseScore *score_to_return)
 {
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
 
-    const char *sql = "SELECT id, exam_id, user_id, score, expired_flag FROM scores WHERE exam_id = ? AND user_id = ? LIMIT 1;";
+    // 定义SQL查询语句模板，允许根据 key 来动态选择字段进行查询
+    const char *sql = "SELECT id, exam_id, user_id, score, expired_flag FROM scores WHERE ";
+
+    // 根据key值判断选择查询条件
+    if (strcmp(key, "exam_id") == 0)
+    {
+        // 查询考试ID
+        strcat(sql, "exam_id = ? LIMIT 1;");
+    }
+    else if (strcmp(key, "user_id") == 0)
+    {
+        // 查询用户ID
+        strcat(sql, "user_id = ? LIMIT 1;");
+    }
+    else
+    {
+        // 如果key不是exam_id或者user_id，则查询失败
+        log_message(LOGLEVEL_ERROR, "无效的查询条件 key: %s", key);
+        return 1;
+    }
 
     // 打开数据库
     if (open_database(SCORES_DB, &db))
@@ -366,8 +385,7 @@ int query_score_info(const char *exam_id, const char *user_id, struct SqlRespons
         return 1;
     }
 
-    // 初始化传入的scores_to_return来避免出错
-    // 用了一个比较傻的方式，但是管用
+    // 初始化传入的score_to_return结构体来避免出错
     strcpy(score_to_return->id, "");
     strcpy(score_to_return->exam_id, "");
     strcpy(score_to_return->user_id, "");
@@ -384,21 +402,11 @@ int query_score_info(const char *exam_id, const char *user_id, struct SqlRespons
         return 1;
     }
 
-    // 绑定考试ID
-    rc = sqlite3_bind_text(stmt, 1, exam_id, -1, SQLITE_STATIC);
+    // 绑定查询内容参数
+    rc = sqlite3_bind_text(stmt, 1, content, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        log_message(LOGLEVEL_ERROR, "绑定考试ID参数失败：%s", sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        return 1;
-    }
-
-    // 绑定用户ID
-    rc = sqlite3_bind_text(stmt, 2, user_id, -1, SQLITE_STATIC);
-    if (rc != SQLITE_OK)
-    {
-        log_message(LOGLEVEL_ERROR, "绑定用户ID参数失败：%s", sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定查询内容参数失败：%s", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_close(db);
         return 1;
@@ -415,11 +423,11 @@ int query_score_info(const char *exam_id, const char *user_id, struct SqlRespons
         score_to_return->score = (float)sqlite3_column_double(stmt, 3);
         score_to_return->expired_flag = sqlite3_column_int(stmt, 4);
 
-        log_message(LOGLEVEL_INFO, "成功查询到成绩信息，考试ID：%s，用户ID：%s", exam_id, user_id);
+        log_message(LOGLEVEL_INFO, "成功查询到成绩信息，查询条件：%s = %s", key, content);
     }
     else
     {
-        log_message(LOGLEVEL_INFO, "没有找到符合条件的成绩信息，考试ID：%s，用户ID：%s", exam_id, user_id);
+        log_message(LOGLEVEL_INFO, "没有找到符合条件的成绩信息，查询条件：%s = %s", key, content);
     }
 
     // 清理和关闭数据库
@@ -1878,533 +1886,3 @@ cleanup:
 }
 
 /**************************** 单条数据修改结束 ****************************/
-
-int main()
-{
-    SetConsoleOutputCP(65001);
-    printf("===== 开始数据库操作测试 =====\n\n");
-    system("pause");
-    // 1. 插入新用户
-    printf("1. 插入新用户...\n");
-    printf("1.1 插入新教师用户...\n");
-    insert_user_data("c21e94d5-20d8-44d0-8299-eeaf7339fb22", "teacher_1", "a7117a4b2f5bc0ab7b16bea3dd831dd33d78a49d91c89dfa522eb04e7bf9e7c4ec72e49091245af7e11efc49002962569427f10de2beeb62d11010106f7d7cf0", "LWaaGwm6envH9sGj", 1, "黄洋", "", 7725, "");
-    insert_user_data("17acdda4-7b2f-48b7-956d-db59627e2d0a", "teacher_2", "f55a3d39a81358cf2a54091144dfaa287b1066a258ad968b86ed86cc9b197c45bd8b3dd4ac2e948a800a0f5e7e6529d2697c5280aa9d39fe419ba31a13d4af62", "JRYTiouBho6HxwNK", 1, "张芳", "", 6803, "");
-    insert_user_data("63cc2618-5cc7-45cb-bcb8-456432a23691", "teacher_3", "1353d4d6441145b51a44b1d3c1ad0365a0b291139bffc51c6601bf4d694793643e04a7f1fde3658513e7dcd79bb0010df52be3376f5a794c2320a0e08910f722", "BNx5oY8m0XwDL3zd", 1, "王伟", "", 6921, "");
-
-    printf("1.2 插入新学生用户\n");
-    insert_user_data("eac40007-86f7-43cc-9cc0-5a863f35fe51", "user_9870", "66c510e9e8e10d6be747d39912e198dd7c0a4adc7d5234dfe64f762b3b804944ecf6b66802ccb481e5361bd806fb6ecb91ef035f9fc563a6db8a7fdb19d95fca", "rGQ4LuvwvE75bl12", 0, "周静", "数据科学", 3083067581, "17acdda4-7b2f-48b7-956d-db59627e2d0a");
-    insert_user_data("f83415ca-9770-4405-b34e-7ad9cb3004b8", "user_7811", "63e891cdeb384b1f7ec807f75cb9d00d1295c622966c60cb73df45f0a500ab35fb5936eca45218fee45a529fb6f0dd1a04dfa4d129a8c9de3608f2c0c5b8bac7", "gYU3H09CIjVvp5oZ", 0, "张丽", "信息安全", 3576443143, "63cc2618-5cc7-45cb-bcb8-456432a23691");
-    insert_user_data("3f92bd64-26f3-46d3-9d3e-3da068274c0f", "user_2931", "f748ee6ce2f37aeab3ebad20cd1d75db9395113174ed758075a3c99845e1c30908ef23d35cd123ac3c22a25db89a7b5dc8d14d548dec587169b72eb9d619c9df", "Qcf0WFBmnIvy6lrH", 0, "黄敏", "计算机科学与技术", 3890070435, "17acdda4-7b2f-48b7-956d-db59627e2d0a");
-    insert_user_data("627cb285-9122-4460-8556-3e950e7142a9", "user_3830", "e6e092e789a93cc6b46679dc0fcceb208e03a6df915a683e5e315a2c3ad90c9268def0e54167b3e34160a7a490b3679a534780f59c48a2bcdc0ecfa1e026c1d8", "1CEy6CvXIrNRcjA4", 0, "杨芳", "软件工程", 3349463823, "c21e94d5-20d8-44d0-8299-eeaf7339fb22");
-    insert_user_data("473537fe-a158-4e77-8ade-2a228f12d65d", "user_2054", "09ebadd95836e7972b1e3d91bb1945a9cac7b548e3b6d35483c3b054b4c50a6909b477a4d79d43f84bdeede6d2c3a06d1afc3216cd94f39a0df4c53a92f5c875", "zi9S0wsXOHJCioKI", 0, "陈强", "计算机科学与技术", 1518534718, "63cc2618-5cc7-45cb-bcb8-456432a23691");
-    insert_user_data("f2a3820f-f919-41ea-b399-4f2186d9081a", "user_6856", "e95dfa7f57a4682e18900027f3f8d0d2cb1cbed878aa75c03f07bd632436526a00d68a9a8b51cee9a11d5e4222bc868a58101c9b976817f18a4ccfeb6ac90fd5", "NyrLFaqF6s4MqEvf", 0, "张强", "软件工程", 1538069630, "c21e94d5-20d8-44d0-8299-eeaf7339fb22");
-    insert_user_data("082367d8-03b6-4701-82fc-8feff6e473de", "user_7884", "4319b47cfa5b8c2d7ae1141f8f32eebc707a1676c16bac6d900ed4960438888ce6ed26bcfb53bb143b675160f8f1525aa10d73d65a50ecf137da9b5af938eeff", "S4dvRoGoGz2CGmFg", 0, "王军", "数据科学", 1843619154, "17acdda4-7b2f-48b7-956d-db59627e2d0a");
-    insert_user_data("f511634f-1851-45c3-b95c-b6ad6b858fb9", "user_1977", "320fb08db7a50b7f4aec86918195bc24845675cddf636ac177b2cbc46a844bfb3a56bf7ad3af02ec77aae59b6f7630531d4f8fb0e99489087a977a2d5a7a143b", "6pX06XZOH7tfgkqL", 0, "周洋", "人工智能", 2265324013, "63cc2618-5cc7-45cb-bcb8-456432a23691");
-    insert_user_data("7e21b765-d05e-44da-86a3-2f4a00cf1960", "user_2182", "36c6f4817b4b084d8d7a7b2c980e3d77b0f3d69eb053711f13c91cc4d4ed4aea29cbff6f6e357e5af261d020d89d76ffddc58d030ccfa1d5d003ce73b14ba324", "TBr47A8YapvB8hwO", 0, "赵军", "人工智能", 2861294394, "c21e94d5-20d8-44d0-8299-eeaf7339fb22");
-    insert_user_data("2b6ad28d-9ea8-4733-bce2-4719d0d2794f", "user_4367", "a4b20a6d54f9549736d73a9b9f4c07880dbaa137632c2fe507312937bbc505ee159b746beaff374f5897a4a5c41ecdc9239857493169ed1b3e02fe06b8ffba2d", "Bm94B6sUZkmwiwxF", 0, "杨军", "人工智能", 1001604851, "c21e94d5-20d8-44d0-8299-eeaf7339fb22");
-    system("pause");
-    // 2. 插入新考试
-    printf("2. 插入新考试...\n");
-    insert_exam_data("9136eeab-7e50-4dec-ada4-4fe27fc83f1b", "2月月考", 1719539996, 1719546803, 1, 1);
-    insert_exam_data("2bf8d1cc-635f-437a-afae-d4e701a1c111", "2月月考", 1704628540, 1704635143, 0, 0);
-    insert_exam_data("0bd088fe-c089-468f-85ca-6e4878b54640", "2月月考", 1727290933, 1727296696, 1, 1);
-    insert_exam_data("d5712e69-c137-4a30-b997-fb1f744b665a", "1月月考", 1723457350, 1723461705, 0, 0);
-    insert_exam_data("f46a21cf-55d6-428a-8275-e126318dad9d", "1月月考", 1716456045, 1716462385, 0, 1);
-    system("pause");
-    // 3. 插入新问题
-    printf("3. 插入新问题...\n");
-    insert_question_data("476952e8-3aa3-48eb-a808-76b6726b3ed0", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", 23.4f, 3, 18.9f);
-    insert_question_data("02ae76a6-f256-4f5a-a29d-72760d093d21", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", 56.4f, 1, 70.0f);
-    insert_question_data("a5433bf8-2929-4e8d-933a-fce98186f42a", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", 85.8f, 0, 15.8f);
-    insert_question_data("cda3df9f-5809-41bb-96a7-8bd51646b804", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", 52.9f, 2, 58.0f);
-    insert_question_data("49d4c343-2fbb-4c46-896d-c91ca188473e", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", 27.1f, 1, 36.2f);
-    insert_question_data("9878828a-4e98-411a-b90c-640c2f1bef8a", "2bf8d1cc-635f-437a-afae-d4e701a1c111", 69.1f, 0, 17.6f);
-    insert_question_data("2b5455f6-4715-4f01-98c1-ec68306ce8ca", "2bf8d1cc-635f-437a-afae-d4e701a1c111", 10.1f, 2, 88.6f);
-    insert_question_data("c963b484-0e6f-40b5-af4e-b05b56158d07", "2bf8d1cc-635f-437a-afae-d4e701a1c111", 23.3f, 2, 50.2f);
-    insert_question_data("c565781d-3532-4dd1-9497-f6d0bca11555", "2bf8d1cc-635f-437a-afae-d4e701a1c111", 77.9f, 0, 81.3f);
-    insert_question_data("1f8506cb-21a5-41d1-98d8-301c4ab24ece", "2bf8d1cc-635f-437a-afae-d4e701a1c111", 92.3f, 3, 68.5f);
-    insert_question_data("25d4ee44-9e6a-40e9-834a-91a8c1528ab7", "0bd088fe-c089-468f-85ca-6e4878b54640", 14.5f, 2, 26.5f);
-    insert_question_data("021f87b6-6911-4b6d-a293-360351082d3e", "0bd088fe-c089-468f-85ca-6e4878b54640", 33.5f, 0, 20.3f);
-    insert_question_data("af886fd9-8f3d-4f45-b5df-480bd3f68f96", "0bd088fe-c089-468f-85ca-6e4878b54640", 75.2f, 0, 2.1f);
-    insert_question_data("68ee012e-c0ad-49ad-a232-354a7550743e", "0bd088fe-c089-468f-85ca-6e4878b54640", 19.7f, 0, 34.5f);
-    insert_question_data("0e3bb333-102e-4896-98e1-e9249d990603", "0bd088fe-c089-468f-85ca-6e4878b54640", 50.8f, 0, 75.1f);
-    insert_question_data("c6d9e5a3-6e17-4a83-afaf-6ba88186fa0d", "d5712e69-c137-4a30-b997-fb1f744b665a", 56.4f, 2, 22.6f);
-    insert_question_data("ddc09ff7-b397-4417-8489-d7efdc107be2", "d5712e69-c137-4a30-b997-fb1f744b665a", 62.4f, 3, 68.9f);
-    insert_question_data("b7e7acf2-f858-40af-b204-a581e7e0926c", "d5712e69-c137-4a30-b997-fb1f744b665a", 28.3f, 1, 34.2f);
-    insert_question_data("31ff6d10-3fe3-4db6-a017-068ee509e66d", "d5712e69-c137-4a30-b997-fb1f744b665a", 67.2f, 2, 3.0f);
-    insert_question_data("cd58a92a-88a1-4a1a-9afb-5d4dce44e652", "d5712e69-c137-4a30-b997-fb1f744b665a", 93.8f, 1, 86.4f);
-    insert_question_data("dcb4450d-305e-446b-b58f-c829b9517d68", "f46a21cf-55d6-428a-8275-e126318dad9d", 69.1f, 0, 21.9f);
-    insert_question_data("5c47a40e-ca6d-4d52-add0-407fa723f322", "f46a21cf-55d6-428a-8275-e126318dad9d", 92.5f, 2, 66.6f);
-    insert_question_data("be322f9a-8d61-4993-9fbe-aaeed446d85c", "f46a21cf-55d6-428a-8275-e126318dad9d", 29.3f, 1, 28.4f);
-    insert_question_data("a4fb3f8a-978e-4a07-b047-9f0bd76160f6", "f46a21cf-55d6-428a-8275-e126318dad9d", 91.5f, 2, 29.2f);
-    insert_question_data("405a3580-6af9-45ae-867a-004e17c957f3", "f46a21cf-55d6-428a-8275-e126318dad9d", 93.5f, 3, 29.8f);
-    system("pause");
-    // 4. 插入新成绩
-    printf("4. 插入新成绩...\n");
-    insert_score_data("f9409255-3a9a-470a-aeea-9b2b89c7e5bb", "d5712e69-c137-4a30-b997-fb1f744b665a", "7e21b765-d05e-44da-86a3-2f4a00cf1960", 74.9f, 1);
-    insert_score_data("930ed5ee-ae24-43ea-b7b1-8110420074da", "2bf8d1cc-635f-437a-afae-d4e701a1c111", "473537fe-a158-4e77-8ade-2a228f12d65d", 91.1f, 0);
-    insert_score_data("eb9683cd-8950-421e-b925-76a0f827dba4", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", "f2a3820f-f919-41ea-b399-4f2186d9081a", 62.8f, 0);
-    insert_score_data("a3add7ba-90d2-4ff0-8d20-5f994a87bc07", "d5712e69-c137-4a30-b997-fb1f744b665a", "082367d8-03b6-4701-82fc-8feff6e473de", 71.2f, 1);
-    insert_score_data("7aa09a74-d311-457d-9f13-873c2c7d73fb", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", "f511634f-1851-45c3-b95c-b6ad6b858fb9", 69.9f, 1);
-    insert_score_data("93b492cc-71b8-4a3a-87a8-838ae6a6a855", "2bf8d1cc-635f-437a-afae-d4e701a1c111", "082367d8-03b6-4701-82fc-8feff6e473de", 64.6f, 1);
-    insert_score_data("cbf64d43-8004-4d87-8b59-e4a8e993dd9b", "2bf8d1cc-635f-437a-afae-d4e701a1c111", "eac40007-86f7-43cc-9cc0-5a863f35fe51", 70.5f, 0);
-    insert_score_data("217f4516-5d5e-4a25-a3f2-2cdb3e2756e7", "f46a21cf-55d6-428a-8275-e126318dad9d", "082367d8-03b6-4701-82fc-8feff6e473de", 60.8f, 0);
-    insert_score_data("12ddf76b-55e9-4e50-bf8e-2c8422b4fe6e", "0bd088fe-c089-468f-85ca-6e4878b54640", "2b6ad28d-9ea8-4733-bce2-4719d0d2794f", 79.1f, 1);
-    insert_score_data("04bb7cff-4608-40b1-ba2c-e887d3671154", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", "7e21b765-d05e-44da-86a3-2f4a00cf1960", 55.7f, 1);
-    insert_score_data("85dbbd48-e8d2-4103-9175-ba5e6a754118", "d5712e69-c137-4a30-b997-fb1f744b665a", "2b6ad28d-9ea8-4733-bce2-4719d0d2794f", 93.8f, 1);
-    insert_score_data("d8e23757-62d2-4446-94bc-94cb4bc2ff71", "d5712e69-c137-4a30-b997-fb1f744b665a", "eac40007-86f7-43cc-9cc0-5a863f35fe51", 91.7f, 1);
-    insert_score_data("2fb0cd79-bdaf-485e-8515-d15c9e8ddf90", "f46a21cf-55d6-428a-8275-e126318dad9d", "f83415ca-9770-4405-b34e-7ad9cb3004b8", 57.7f, 0);
-    insert_score_data("6d5471e0-dd9c-47cc-80f3-67d109a4cea3", "f46a21cf-55d6-428a-8275-e126318dad9d", "473537fe-a158-4e77-8ade-2a228f12d65d", 57.6f, 0);
-    insert_score_data("7976b7e0-6722-4a28-9fac-c3df2dea4d11", "d5712e69-c137-4a30-b997-fb1f744b665a", "082367d8-03b6-4701-82fc-8feff6e473de", 68.7f, 1);
-    system("pause");
-    // 5. 查询单个用户
-    printf("5. 查询单个用户...\n");
-    struct User queried_user;
-    if (query_user_info("id", "eac40007-86f7-43cc-9cc0-5a863f35fe51", &queried_user) == 0)
-    {
-        printf("查询到的用户信息：\n");
-        printf("ID: %s\n", queried_user.id);
-        printf("用户名: %s\n", queried_user.username);
-        printf("角色: %d\n", queried_user.role);
-        printf("姓名: %s\n", queried_user.name);
-        printf("班级: %s\n", queried_user.class_name);
-        printf("学号: %u\n", queried_user.number);
-        printf("归属教师: %s\n", queried_user.belong_to);
-        printf("权限：\n");
-        printf("  答题权限: %d\n", queried_user.permission.stu_answer);
-        printf("  查看个人信息权限: %d\n", queried_user.permission.stu_inspect_personal_info);
-        printf("  查看考试信息权限: %d\n", queried_user.permission.stu_inspect_exam_info);
-        printf("  管理考试权限: %d\n", queried_user.permission.tea_manage_exam);
-        printf("  管理学生权限: %d\n", queried_user.permission.tea_manage_student);
-        printf("  查看学生信息权限: %d\n", queried_user.permission.tea_inspect_student_info);
-        printf("  查看成绩单权限: %d\n", queried_user.permission.tea_inspect_exam_scores);
-        printf("  修改个人信息权限: %d\n\n", queried_user.permission.general_edit_info);
-    }
-    else
-    {
-        printf("查询用户失败。\n\n");
-    }
-    system("pause");
-    // 6. 查询所有用户
-    printf("6. 查询所有用户...\n");
-    struct User all_users[10];
-    if (query_users_info_all("张%%", "计算机%%", 0, "%%", "%%", all_users, 10) == 0)
-    {
-        printf("查询到的用户列表：\n");
-        for (int i = 0; i < 10 && all_users[i].id[0] != '\0'; i++)
-        {
-            printf("用户 %d:\n", i + 1);
-            printf("  ID: %s\n", all_users[i].id);
-            printf("  用户名: %s\n", all_users[i].username);
-            printf("  角色: %d\n", all_users[i].role);
-            printf("  姓名: %s\n", all_users[i].name);
-            printf("  班级: %s\n", all_users[i].class_name);
-            printf("  学号: %u\n", all_users[i].number);
-            printf("  归属教师: %s\n", all_users[i].belong_to);
-            printf("  权限：\n");
-            printf("    答题权限: %d\n", all_users[i].permission.stu_answer);
-            printf("    查看个人信息权限: %d\n", all_users[i].permission.stu_inspect_personal_info);
-            printf("    查看考试信息权限: %d\n", all_users[i].permission.stu_inspect_exam_info);
-            printf("    管理考试权限: %d\n", all_users[i].permission.tea_manage_exam);
-            printf("    管理学生权限: %d\n", all_users[i].permission.tea_manage_student);
-            printf("    查看学生信息权限: %d\n", all_users[i].permission.tea_inspect_student_info);
-            printf("    查看成绩单权限: %d\n", all_users[i].permission.tea_inspect_exam_scores);
-            printf("    修改个人信息权限: %d\n\n", all_users[i].permission.general_edit_info);
-        }
-    }
-    else
-    {
-        printf("查询所有用户失败。\n\n");
-    }
-    system("pause");
-    // 7. 修改用户数据
-    printf("7. 修改用户数据...\n");
-    if (edit_user_data(
-            "eac40007-86f7-43cc-9cc0-5a863f35fe51",
-            "john_doe_updated",
-            "new_hashed_password",
-            "new_salt",
-            1, // 修改为教师
-            "李四",
-            "软件工程",
-            3124005678,
-            "17acdda4-7b2f-48b7-956d-db59627e2d0a") == 0)
-    {
-        printf("用户数据修改成功。\n\n");
-    }
-    else
-    {
-        printf("用户数据修改失败。\n\n");
-    }
-    system("pause");
-    // 8. 查询修改后的用户
-    printf("8. 查询修改后的用户...\n");
-    if (query_user_info("id", "eac40007-86f7-43cc-9cc0-5a863f35fe51", &queried_user) == 0)
-    {
-        printf("修改后的用户信息：\n");
-        printf("ID: %s\n", queried_user.id);
-        printf("用户名: %s\n", queried_user.username);
-        printf("角色: %d\n", queried_user.role);
-        printf("姓名: %s\n", queried_user.name);
-        printf("班级: %s\n", queried_user.class_name);
-        printf("学号: %u\n", queried_user.number);
-        printf("归属教师: %s\n", queried_user.belong_to);
-        printf("权限：\n");
-        printf("  答题权限: %d\n", queried_user.permission.stu_answer);
-        printf("  查看个人信息权限: %d\n", queried_user.permission.stu_inspect_personal_info);
-        printf("  查看考试信息权限: %d\n", queried_user.permission.stu_inspect_exam_info);
-        printf("  管理考试权限: %d\n", queried_user.permission.tea_manage_exam);
-        printf("  管理学生权限: %d\n", queried_user.permission.tea_manage_student);
-        printf("  查看学生信息权限: %d\n", queried_user.permission.tea_inspect_student_info);
-        printf("  查看成绩单权限: %d\n", queried_user.permission.tea_inspect_exam_scores);
-        printf("  修改个人信息权限: %d\n\n", queried_user.permission.general_edit_info);
-    }
-    else
-    {
-        printf("查询修改后的用户失败。\n\n");
-    }
-    system("pause");
-    // 9. 删除用户数据
-    printf("9. 删除用户数据...\n");
-    if (del_user_data("eac40007-86f7-43cc-9cc0-5a863f35fe51") == 0)
-    {
-        printf("用户删除成功。\n\n");
-    }
-    else
-    {
-        printf("用户删除失败。\n\n");
-    }
-    system("pause");
-    // 10. 查询删除后的用户
-    printf("10. 查询删除后的用户...\n");
-    if (query_user_info("id", "eac40007-86f7-43cc-9cc0-5a863f35fe51", &queried_user) == 0)
-    {
-        if (queried_user.id[0] != '\0')
-        {
-            printf("删除后的用户信息仍存在：\n");
-            printf("ID: %s\n", queried_user.id);
-            // 其他信息省略
-        }
-        else
-        {
-            printf("用户已成功删除，未找到相关信息。\n\n");
-        }
-    }
-    else
-    {
-        printf("查询删除后的用户失败。\n\n");
-    }
-    system("pause");
-    // 11. 查询单个考试
-    printf("11. 查询单个考试...\n");
-    struct SqlResponseExam queried_exam;
-    if (query_exam_info("id", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", &queried_exam) == 0)
-    {
-        printf("查询到的考试信息：\n");
-        printf("ID: %s\n", queried_exam.id);
-        printf("名称: %s\n", queried_exam.name);
-        printf("开始时间: %u\n", queried_exam.start_time);
-        printf("结束时间: %u\n", queried_exam.end_time);
-        printf("允许逾期作答: %d\n", queried_exam.allow_answer_when_expired);
-        printf("随机问题顺序: %d\n\n", queried_exam.random_question);
-    }
-    else
-    {
-        printf("查询考试失败。\n\n");
-    }
-    system("pause");
-    // 12. 查询所有考试
-    printf("12. 查询所有考试...\n");
-    struct SqlResponseExam all_exams[10];
-    if (query_exams_info_all("2月%%", 1704620000, 1728000000, all_exams, 10) == 0)
-    {
-        printf("查询到的考试列表：\n");
-        for (int i = 0; i < 10 && all_exams[i].id[0] != '\0'; i++)
-        {
-            printf("考试 %d:\n", i + 1);
-            printf("  ID: %s\n", all_exams[i].id);
-            printf("  名称: %s\n", all_exams[i].name);
-            printf("  开始时间: %u\n", all_exams[i].start_time);
-            printf("  结束时间: %u\n", all_exams[i].end_time);
-            printf("  允许逾期作答: %d\n", all_exams[i].allow_answer_when_expired);
-            printf("  随机问题顺序: %d\n\n", all_exams[i].random_question);
-        }
-    }
-    else
-    {
-        printf("查询所有考试失败。\n\n");
-    }
-    system("pause");
-    // 13. 修改考试数据
-    printf("13. 修改考试数据...\n");
-    if (edit_exam_data(
-            "9136eeab-7e50-4dec-ada4-4fe27fc83f1b",
-            "2月月考 - 更新版",
-            1719539996,
-            1719546803,
-            0, // 不允许逾期作答
-            0  // 关闭随机问题顺序
-            ) == 0)
-    {
-        printf("考试数据修改成功。\n\n");
-    }
-    else
-    {
-        printf("考试数据修改失败。\n\n");
-    }
-    system("pause");
-    // 14. 查询修改后的考试
-    printf("14. 查询修改后的考试...\n");
-    if (query_exam_info("id", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", &queried_exam) == 0)
-    {
-        printf("修改后的考试信息：\n");
-        printf("ID: %s\n", queried_exam.id);
-        printf("名称: %s\n", queried_exam.name);
-        printf("开始时间: %u\n", queried_exam.start_time);
-        printf("结束时间: %u\n", queried_exam.end_time);
-        printf("允许逾期作答: %d\n", queried_exam.allow_answer_when_expired);
-        printf("随机问题顺序: %d\n\n", queried_exam.random_question);
-    }
-    else
-    {
-        printf("查询修改后的考试失败。\n\n");
-    }
-    system("pause");
-    // 15. 删除考试数据
-    printf("15. 删除考试数据...\n");
-    if (del_exam_data("9136eeab-7e50-4dec-ada4-4fe27fc83f1b") == 0)
-    {
-        printf("考试删除成功。\n\n");
-    }
-    else
-    {
-        printf("考试删除失败。\n\n");
-    }
-    system("pause");
-    // 16. 查询删除后的考试
-    printf("16. 查询删除后的考试...\n");
-    if (query_exam_info("id", "9136eeab-7e50-4dec-ada4-4fe27fc83f1b", &queried_exam) == 0)
-    {
-        if (queried_exam.id[0] != '\0')
-        {
-            printf("删除后的考试信息仍存在：\n");
-            printf("ID: %s\n", queried_exam.id);
-            // 其他信息省略
-        }
-        else
-        {
-            printf("考试已成功删除，未找到相关信息。\n\n");
-        }
-    }
-    else
-    {
-        printf("查询删除后的考试失败。\n\n");
-    }
-    system("pause");
-    // 17. 查询单个问题
-    printf("17. 查询单个问题...\n");
-    struct SqlResponseQuestion queried_question;
-    if (query_question_info("id", "476952e8-3aa3-48eb-a808-76b6726b3ed0", &queried_question) == 0)
-    {
-        printf("查询到的问题信息：\n");
-        printf("ID: %s\n", queried_question.id);
-        printf("考试ID: %s\n", queried_question.exam_id);
-        printf("第一个操作数: %.2f\n", queried_question.num1);
-        printf("运算符: %d\n", queried_question.op);
-        printf("第二个操作数: %.2f\n\n", queried_question.num2);
-    }
-    else
-    {
-        printf("查询问题失败。\n\n");
-    }
-    system("pause");
-    // 18. 查询所有问题
-    printf("18. 查询所有问题...\n");
-    struct SqlResponseQuestion all_questions[10];
-    if (query_questions_info_all("2bf8d1cc-635f-437a-afae-d4e701a1c111", all_questions, 10) == 0)
-    {
-        printf("查询到的问题列表：\n");
-        for (int i = 0; i < 10 && all_questions[i].id[0] != '\0'; i++)
-        {
-            printf("问题 %d:\n", i + 1);
-            printf("  ID: %s\n", all_questions[i].id);
-            printf("  考试ID: %s\n", all_questions[i].exam_id);
-            printf("  第一个操作数: %.2f\n", all_questions[i].num1);
-            printf("  运算符: %d\n", all_questions[i].op);
-            printf("  第二个操作数: %.2f\n\n", all_questions[i].num2);
-        }
-    }
-    else
-    {
-        printf("查询所有问题失败。\n\n");
-    }
-    system("pause");
-    // 19. 修改问题数据
-    printf("19. 修改问题数据...\n");
-    if (edit_question_data(
-            "476952e8-3aa3-48eb-a808-76b6726b3ed0",
-            "2bf8d1cc-635f-437a-afae-d4e701a1c111",
-            60.5f, // 新的第一个操作数
-            0,     // 修改为运算符 '+'
-            70.3f  // 新的第二个操作数
-            ) == 0)
-    {
-        printf("问题数据修改成功。\n\n");
-    }
-    else
-    {
-        printf("问题数据修改失败。\n\n");
-    }
-    system("pause");
-    // 20. 查询修改后的问题
-    printf("20. 查询修改后的问题...\n");
-    if (query_question_info("id", "476952e8-3aa3-48eb-a808-76b6726b3ed0", &queried_question) == 0)
-    {
-        printf("修改后的问题信息：\n");
-        printf("ID: %s\n", queried_question.id);
-        printf("考试ID: %s\n", queried_question.exam_id);
-        printf("第一个操作数: %.2f\n", queried_question.num1);
-        printf("运算符: %d\n", queried_question.op);
-        printf("第二个操作数: %.2f\n\n", queried_question.num2);
-    }
-    else
-    {
-        printf("查询修改后的问题失败。\n\n");
-    }
-    system("pause");
-    // 21. 删除问题数据
-    printf("21. 删除问题数据...\n");
-    if (del_question_data("476952e8-3aa3-48eb-a808-76b6726b3ed0") == 0)
-    {
-        printf("问题删除成功。\n\n");
-    }
-    else
-    {
-        printf("问题删除失败。\n\n");
-    }
-    system("pause");
-    // 22. 查询删除后的问题
-    printf("22. 查询删除后的问题...\n");
-    if (query_question_info("id", "476952e8-3aa3-48eb-a808-76b6726b3ed0", &queried_question) == 0)
-    {
-        if (queried_question.id[0] != '\0')
-        {
-            printf("删除后的问题信息仍存在：\n");
-            printf("ID: %s\n", queried_question.id);
-            // 其他信息省略
-        }
-        else
-        {
-            printf("问题已成功删除，未找到相关信息。\n\n");
-        }
-    }
-    else
-    {
-        printf("查询删除后的问题失败。\n\n");
-    }
-    system("pause");
-    // 23. 查询单个成绩
-    printf("23. 查询单个成绩...\n");
-    struct SqlResponseScore queried_score;
-    if (query_score_info("d5712e69-c137-4a30-b997-fb1f744b665a", "7e21b765-d05e-44da-86a3-2f4a00cf1960", &queried_score) == 0)
-    {
-        printf("查询到的成绩信息：\n");
-        printf("ID: %s\n", queried_score.id);
-        printf("考试ID: %s\n", queried_score.exam_id);
-        printf("用户ID: %s\n", queried_score.user_id);
-        printf("分数: %.2f\n", queried_score.score);
-        printf("逾期标志: %d\n\n", queried_score.expired_flag);
-    }
-    else
-    {
-        printf("查询成绩失败。\n\n");
-    }
-    system("pause");
-    // 24. 查询所有成绩
-    printf("24. 查询所有成绩...\n");
-    struct SqlResponseScore all_scores[10];
-    if (query_scores_info_all("f46a21cf-55d6-428a-8275-e126318dad9d", "f2a3820f-f919-41ea-b399-4f2186d9081a", all_scores, 10) == 0)
-    {
-        printf("查询到的成绩列表：\n");
-        for (int i = 0; i < 10 && all_scores[i].id[0] != '\0'; i++)
-        {
-            printf("成绩 %d:\n", i + 1);
-            printf("  ID: %s\n", all_scores[i].id);
-            printf("  考试ID: %s\n", all_scores[i].exam_id);
-            printf("  用户ID: %s\n", all_scores[i].user_id);
-            printf("  分数: %.2f\n", all_scores[i].score);
-            printf("  逾期标志: %d\n\n", all_scores[i].expired_flag);
-        }
-    }
-    else
-    {
-        printf("查询所有成绩失败。\n\n");
-    }
-    system("pause");
-    // 25. 修改成绩数据
-    printf("25. 修改成绩数据...\n");
-    if (edit_score_data(
-            "f9409255-3a9a-470a-aeea-9b2b89c7e5bb",
-            "4715c3de-3b3b-4283-8787-eaa4b9d419b1",
-            "7e21b765-d05e-44da-86a3-2f4a00cf1960",
-            75.0f, // 新的分数
-            1      // 修改为逾期
-            ) == 0)
-    {
-        printf("成绩数据修改成功。\n\n");
-    }
-    else
-    {
-        printf("成绩数据修改失败。\n\n");
-    }
-    system("pause");
-    // 26. 查询修改后的成绩
-    printf("26. 查询修改后的成绩...\n");
-    if (query_score_info("4715c3de-3b3b-4283-8787-eaa4b9d419b1", "7e21b765-d05e-44da-86a3-2f4a00cf1960", &queried_score) == 0)
-    {
-        printf("修改后的成绩信息：\n");
-        printf("ID: %s\n", queried_score.id);
-        printf("考试ID: %s\n", queried_score.exam_id);
-        printf("用户ID: %s\n", queried_score.user_id);
-        printf("分数: %.2f\n", queried_score.score);
-        printf("逾期标志: %d\n\n", queried_score.expired_flag);
-    }
-    else
-    {
-        printf("查询修改后的成绩失败。\n\n");
-    }
-    system("pause");
-    // 27. 删除成绩数据
-    printf("27. 删除成绩数据...\n");
-    if (del_score_data("f9409255-3a9a-470a-aeea-9b2b89c7e5bb") == 0)
-    {
-        printf("成绩删除成功。\n\n");
-    }
-    else
-    {
-        printf("成绩删除失败。\n\n");
-    }
-    system("pause");
-    // 28. 查询删除后的成绩
-    printf("28. 查询删除后的成绩...\n");
-    if (query_score_info("4715c3de-3b3b-4283-8787-eaa4b9d419b1", "7e21b765-d05e-44da-86a3-2f4a00cf1960", &queried_score) == 0)
-    {
-        if (queried_score.id[0] != '\0')
-        {
-            printf("删除后的成绩信息仍存在：\n");
-            printf("ID: %s\n", queried_score.id);
-            // 其他信息省略
-        }
-        else
-        {
-            printf("成绩已成功删除，未找到相关信息。\n\n");
-        }
-    }
-    else
-    {
-        printf("查询删除后的成绩失败。\n\n");
-    }
-    printf("===== 数据库操作测试完成 =====\n");
-    system("pause");
-    return 0;
-}
