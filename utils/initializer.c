@@ -148,9 +148,9 @@ void initialize()
             char questions_init_command[] = "CREATE TABLE questions(\n"
                                             "id TEXT PRIMARY KEY    NOT NULL,\n" // 问题ID，UUID，唯一键
                                             "exam_id TEXT           NOT NULL,\n" // 问题作用的考试ID，对应上面考次的UUID
-                                            "num1 REAL           NOT NULL,\n"    // 第一个操作数字
+                                            "num1 INT           NOT NULL,\n"     // 第一个操作数字
                                             "op INTEGER             NOT NULL,\n" // 运算符，0123对应加减乘除
-                                            "num2 REAL           NOT NULL\n"     // 第二个操作数字
+                                            "num2 INT           NOT NULL\n"      // 第二个操作数字
                                             ");\n";
             initialize_database(EXAMINATION_DB, questions_init_command, log_file);
             fprintf(log_file, "%s [%s]: 正在初始化成绩数据库。\n", current_time, LOGLEVEL_INFO);

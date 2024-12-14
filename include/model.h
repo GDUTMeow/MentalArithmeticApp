@@ -132,9 +132,9 @@ struct SqlResponseQuestion
 {
     char id[37];      // 题目的唯一ID，采用UUID4格式
     char exam_id[37]; // 题目对应的考试ID，仍然是UUID4
-    float num1;       // 第一个操作数
+    int num1;       // 第一个操作数
     int op;           // 运算符，0123对应加减乘除
-    float num2;       // 第二个操作数
+    int num2;       // 第二个操作数
 };
 
 /**

@@ -139,7 +139,7 @@ def query_users_info_all(length: int) -> list[SqlResponseUser]:
     @return list 查询到的所有用户信息列表，若查询失败返回空列表。
     """
     # 创建返回结构体数组，长度为指定的查询数量
-    users_to_return = (User * length)()
+    users_to_return = (SqlResponseUser * length)()
 
     # 调用C函数，查询所有用户信息
     result = DATABASE_LIB.query_users_info_all(ctypes.byref(users_to_return[0]), length)
@@ -483,4 +483,159 @@ def edit_question_data(
 
 
 if __name__ == "__main__":
-    print(query_exams_info_all(5))
+    def test_query_user_info():
+        key = "username"
+        content = "john_doe"
+        user = query_user_info(key, content)
+        
+        if user:
+            print(user)
+        else:
+            print("User Not Found!")
+
+    def test_query_exam_info():
+        key = "id"
+        content = "exam_002"
+        exam = query_exam_info(key, content)
+        
+        if exam:
+            print(exam)
+        else:
+            print("Exam Not Found!")
+
+    def test_query_question_info():
+        key = "id"
+        content = "q002"
+        question = query_question_info(key, content)
+        
+        if question:
+            print(question)
+        else:
+            print("Question Not Found!")
+
+    def test_query_score_info():
+        key = "id"
+        content = "score_001"
+        score = query_score_info(key, content)
+        
+        if score:
+            print(score)
+        else:
+            print("Score Not Found!")
+
+    def test_query_exams_info_all():
+        length = 5  # Example: We want to query top 5 exams
+        exams = query_exams_info_all(length)
+        
+        if exams:
+            for exam in exams:
+                print(exam)
+        else:
+            print("No Exams Found!")
+
+    def test_query_users_info_all():
+        length = 5  # Example: We want to query top 5 users
+        users = query_users_info_all(length)
+        
+        if users:
+            for user in users:
+                print(user)
+        else:
+            print("No Users Found!")
+
+    def test_query_questions_info_all():
+        length = 5  # Example: We want to query top 5 questions
+        questions = query_questions_info_all(length)
+        
+        if questions:
+            for question in questions:
+                print(question)
+        else:
+            print("No Questions Found!")
+
+    def test_query_scores_info_all():
+        length = 5  # Example: We want to query top 5 scores
+        scores = query_scores_info_all(length)
+        
+        if scores:
+            for score in scores:
+                print(score)
+        else:
+            print("No Scores Found!")
+
+    def test_insert_exam_data():
+        exam_id = "exam_002"
+        name = "Math Final Exam"
+        start_time = 1700000000  # Example timestamp
+        end_time = 1700500000  # Example timestamp
+        allow_answer_when_expired = 0  # No
+        random_question = 1  # Yes
+        
+        result = insert_exam_data(exam_id, name, start_time, end_time, allow_answer_when_expired, random_question)
+        
+        if result == 1:
+            print("Exam Data Inserted Successfully!")
+        else:
+            print("Failed to Insert Exam Data!")
+
+    def test_insert_question_data():
+        question_id = "q002"
+        exam_id = "exam_002"
+        num1 = 5
+        op = 1  # Plus
+        num2 = 10
+        
+        result = insert_question_data(question_id, exam_id, num1, op, num2)
+        
+        if result == 1:
+            print("Question Data Inserted Successfully!")
+        else:
+            print("Failed to Insert Question Data!")
+
+    def test_insert_score_data():
+        score_id = "score_001"
+        exam_id = "exam_002"
+        user_id = "john_doe"
+        score = 95.5
+        expired_flag = 0  # Not expired
+        
+        result = insert_score_data(score_id, exam_id, user_id, score, expired_flag)
+        
+        if result == 1:
+            print("Score Data Inserted Successfully!")
+        else:
+            print("Failed to Insert Score Data!")
+
+    def test_insert_user_data():
+        user_id = "user_001"
+        username = "john_doe"
+        hashpass = "hashedpassword"
+        salt = "randomsalt"
+        role = 2  # Student
+        name = "John Doe"
+        class_name = "Computer Science"
+        number = 123456
+        belong_to = "University XYZ"
+        
+        result = insert_user_data(user_id, username, hashpass, salt, role, name, class_name, number, belong_to)
+        
+        if result == 1:
+            print("User Data Inserted Successfully!")
+        else:
+            print("Failed to Insert User Data!")
+
+    # Run all the tests
+    def run_tests():
+        test_insert_exam_data()
+        test_insert_question_data()
+        test_insert_score_data()
+        test_insert_user_data()
+        test_query_user_info()
+        test_query_exam_info()
+        test_query_question_info()
+        test_query_score_info()
+        test_query_exams_info_all()
+        test_query_users_info_all()
+        test_query_questions_info_all()
+        test_query_scores_info_all()
+    run_tests()

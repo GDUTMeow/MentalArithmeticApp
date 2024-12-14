@@ -57,9 +57,9 @@ class SqlResponseQuestion(ctypes.Structure):
     _fields_ = [
         ("id", ctypes.c_char * 37),
         ("exam_id", ctypes.c_char * 37),
-        ("num1", ctypes.c_double),
+        ("num1", ctypes.c_int),
         ("op", ctypes.c_int),
-        ("num2", ctypes.c_double),
+        ("num2", ctypes.c_int),
     ]
 
     def __repr__(self):

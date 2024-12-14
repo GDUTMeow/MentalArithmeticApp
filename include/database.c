@@ -359,7 +359,7 @@ int query_score_info(const char *key, const char *content, struct SqlResponseSco
     int rc;
 
     // 定义SQL查询语句模板，允许根据 key 来动态选择字段进行查询
-    const char *sql = "SELECT id, exam_id, user_id, score, expired_flag FROM scores WHERE ";
+    char *sql = "SELECT id, exam_id, user_id, score, expired_flag FROM scores WHERE ";
 
     // 根据key值判断选择查询条件
     if (strcmp(key, "exam_id") == 0)
@@ -699,9 +699,9 @@ int query_questions_info_all(struct SqlResponseQuestion *questions_to_return, in
             strncpy(questions_to_return[count].exam_id, (const char *)exam_id_text, sizeof(questions_to_return[count].exam_id) - 1);
             questions_to_return[count].exam_id[sizeof(questions_to_return[count].exam_id) - 1] = '\0'; // 确保字符串终止
 
-            questions_to_return[count].num1 = (float)sqlite3_column_double(stmt, 2);
+            questions_to_return[count].num1 = sqlite3_column_int(stmt, 2);
             questions_to_return[count].op = sqlite3_column_int(stmt, 3);
-            questions_to_return[count].num2 = (float)sqlite3_column_double(stmt, 4);
+            questions_to_return[count].num2 = sqlite3_column_int(stmt, 4);
             count++;
         }
     }
