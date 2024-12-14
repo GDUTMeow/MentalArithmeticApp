@@ -8,3 +8,4 @@ logs
 DEBUG*.py
 venv
 *.dll
+__pycache__

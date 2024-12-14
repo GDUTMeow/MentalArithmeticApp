@@ -1,4 +1,4 @@
-from .__main__ import *
+from __init__ import *
 from ctypes import c_char_p, c_int, POINTER
 
 
@@ -120,7 +120,7 @@ def query_exams_info_all(length: int) -> list[SqlResponseExam]:
     exams_to_return = (SqlResponseExam * length)()
 
     # 调用C函数，查询所有考试信息
-    result = DATABASE_LIB.query_exams_info_all(ctypes.byref(exams_to_return), length)
+    result = DATABASE_LIB.query_exams_info_all(ctypes.byref(exams_to_return[0]), length)
 
     if result == 0:
         # 查询成功，返回所有考试信息
@@ -130,7 +130,7 @@ def query_exams_info_all(length: int) -> list[SqlResponseExam]:
         return []
 
 
-def query_users_info_all(length: int) -> SqlResponseUser:
+def query_users_info_all(length: int) -> list[SqlResponseUser]:
     """
     @brief 查询所有用户信息，并返回查询结果。
 
@@ -142,7 +142,7 @@ def query_users_info_all(length: int) -> SqlResponseUser:
     users_to_return = (User * length)()
 
     # 调用C函数，查询所有用户信息
-    result = DATABASE_LIB.query_users_info_all(ctypes.byref(users_to_return), length)
+    result = DATABASE_LIB.query_users_info_all(ctypes.byref(users_to_return[0]), length)
 
     if result == 0:
         # 查询成功，返回所有用户信息
@@ -152,7 +152,7 @@ def query_users_info_all(length: int) -> SqlResponseUser:
         return []
 
 
-def query_questions_info_all(length: int) -> SqlResponseQuestion:
+def query_questions_info_all(length: int) -> list[SqlResponseQuestion]:
     """
     @brief 查询所有问题信息，并返回查询结果。
 
@@ -165,7 +165,7 @@ def query_questions_info_all(length: int) -> SqlResponseQuestion:
 
     # 调用C函数，查询所有问题信息
     result = DATABASE_LIB.query_questions_info_all(
-        ctypes.byref(questions_to_return), length
+        ctypes.byref(questions_to_return[0]), length
     )
 
     if result == 0:
@@ -176,7 +176,7 @@ def query_questions_info_all(length: int) -> SqlResponseQuestion:
         return []
 
 
-def query_scores_info_all(length: int) -> SqlResponseScore:
+def query_scores_info_all(length: int) -> list[SqlResponseScore]:
     """
     @brief 查询所有成绩信息，并返回查询结果。
 
@@ -188,7 +188,9 @@ def query_scores_info_all(length: int) -> SqlResponseScore:
     scores_to_return = (SqlResponseScore * length)()
 
     # 调用C函数，查询所有成绩信息
-    result = DATABASE_LIB.query_scores_info_all(ctypes.byref(scores_to_return), length)
+    result = DATABASE_LIB.query_scores_info_all(
+        ctypes.byref(scores_to_return[0]), length
+    )
 
     if result == 0:
         # 查询成功，返回所有成绩信息
@@ -478,3 +480,7 @@ def edit_question_data(
         question_id.encode("utf-8"), exam_id.encode("utf-8"), num1, op, num2
     )
     return 1 if not result else 0
+
+
+if __name__ == "__main__":
+    print(query_exams_info_all(5))

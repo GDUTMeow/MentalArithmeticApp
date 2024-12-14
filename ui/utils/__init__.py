@@ -4,7 +4,7 @@ import ctypes
 from ctypes import c_char_p, c_int, POINTER
 
 # 数据库dll
-DATABASE_LIB: ctypes.CDLL = ctypes.CDLL("database.dll")
+DATABASE_LIB: ctypes.CDLL = ctypes.CDLL("./database.dll")
 
 
 class User(ctypes.Structure):
