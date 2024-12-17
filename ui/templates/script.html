@@ -344,7 +344,7 @@
         formData.append("csvFile", csvFile);
 
         // 发送 POST 请求到服务器 API
-        fetch("/api/v1/teacher/addexam", {
+        fetch("/api/v1/teacher/addExam", {
                 method: "POST",
                 body: formData,
             })
@@ -507,7 +507,7 @@
         );
 
         // 发送删除请求到服务器
-        fetch("/api/v1/teacher/deleteexams", {
+        fetch("/api/v1/teacher/deleteExams", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -547,7 +547,7 @@
         const examId = selectedCheckboxes[0].value;
 
         // 发送请求获取考试详情
-        fetch(`/api/v1/teacher/getexam/${examId}`)
+        fetch(`/api/v1/teacher/getExam/${examId}`)
             .then((response) => response.json())
             .then((data) => {
                 if (data.success) {
@@ -747,7 +747,7 @@
         formData.append("csvFile", studentCsvFile);
 
         // 发送 POST 请求到服务器 API
-        fetch("/api/v1/teacher/addstudents", {
+        fetch("/api/v1/teacher/addStudents", {
                 method: "POST",
                 body: formData,
             })
@@ -798,7 +798,7 @@
         );
 
         // 发送删除请求到服务器
-        fetch("/api/v1/teacher/deletestudents", {
+        fetch("/api/v1/teacher/deleteStudents", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -883,7 +883,7 @@
         const studentId = selectedCheckboxes[0].value;
 
         // 发送请求获取学生详情
-        fetch(`/api/v1/teacher/getstudent/${studentId}`)
+        fetch(`/api/v1/teacher/getStudent/${studentId}`)
             .then((response) => response.json())
             .then((data) => {
                 if (data.success) {
@@ -1044,7 +1044,7 @@
         }
 
         // 发送 POST 请求到服务器 API
-        fetch("/api/v1/teacher/modifystudent", {
+        fetch("/api/v1/teacher/modifyStudent", {
                 method: "POST",
                 body: formData,
             })
@@ -1078,7 +1078,7 @@
         const examId = selectedCheckboxes[0].value;
 
         // 发送请求获取考试成绩
-        fetch(`/api/v1/teacher/getexamscores/${examId}`)
+        fetch(`/api/v1/teacher/getExamScores/${examId}`)
             .then((response) => response.json())
             .then((data) => {
                 if (data.success) {

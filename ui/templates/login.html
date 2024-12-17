@@ -1,4 +1,8 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
 <head>
+    <meta charset="UTF-8" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/mdb.min.css' )}}" />
     <script type="text/javascript" src="{{ url_for('static', filename='js/mdb.umd.min.js' )}}"></script>
     <title>登录 | 口算速算</title>
@@ -8,31 +12,39 @@
         .intro {
             height: 100%;
         }
-        
+
         @media (min-width: 550px) and (max-width: 750px) {
+
             html,
             body,
             .intro {
                 height: 550px;
             }
         }
-        
+
         @media (min-width: 800px) and (max-width: 850px) {
+
             html,
             body,
             .intro {
                 height: 550px;
             }
         }
-        
+
         a.link {
             font-size: 0.875rem;
             color: #a0c4ff;
+            cursor: pointer;
         }
-        
+
         a.link:hover,
         a.link:active {
             color: #a0c4ff;
+        }
+
+        /* 切换表单动画（可选） */
+        .hidden {
+            display: none;
         }
     </style>
 </head>
@@ -47,41 +59,93 @@
                             <div class="card" style="border-radius: 1rem">
                                 <div class="row g-0">
                                     <div class="col-md-4 d-none d-md-block">
-                                        <img src="{{ url_for('static', filename='img/math.webp' )}}" alt="login form" class="img-fluid" style="
-                        border-top-left-radius: 1rem;
-                        border-bottom-left-radius: 1rem;
-                        height: 100%;
-                        width: auto;
-                        object-fit: cover;
-                      " />
+                                        <img src="{{ url_for('static', filename='img/math.webp' )}}" alt="login form"
+                                            class="img-fluid" style="
+                          border-top-left-radius: 1rem;
+                          border-bottom-left-radius: 1rem;
+                          height: 100%;
+                          width: auto;
+                          object-fit: cover;
+                        " />
                                     </div>
                                     <div class="col-md-8 d-flex align-items-center">
                                         <div class="card-body py-5 px-4 p-md-5">
-                                            <form action="">
+                                            <!-- 登录表单 -->
+                                            <form id="login-form" method="post" action="/api/v1/general/login">
                                                 <h4 class="fw-bold mb-4" style="color: #98b4e2">
                                                     登录你的账户
                                                 </h4>
                                                 <p class="mb-4" style="color: #7f9ccc">
                                                     你需要输入你的用户名和密码来登录
                                                 </p>
-
                                                 <div class="form-outline mb-4">
-                                                    <input type="text" id="username" class="form-control" />
-                                                    <hr>
-                                                    <label class="form-label" for="username">用户名</label>
+                                                    <input type="text" id="login-username" class="form-control" />
+                                                    <hr />
+                                                    <label class="form-label" for="login-username">用户名</label>
                                                 </div>
 
                                                 <div class="form-outline mb-4">
-                                                    <input type="password" id="password" class="form-control" />
-                                                    <hr>
-                                                    <label class="form-label" for="password">密码</label>
+                                                    <input type="password" id="login-password" class="form-control" />
+                                                    <hr />
+                                                    <label class="form-label" for="login-password">密码</label>
                                                 </div>
 
                                                 <div class="d-flex justify-content-end pt-1 mb-4">
-                                                    <button class="btn btn-primary btn-rounded" type="button" style="background-color: #7f9ccc" onclick="checkInputValid()">
+                                                    <button id="login-button" class="btn btn-primary btn-rounded"
+                                                        type="submit" style="background-color: #7f9ccc" disabled>
                                                         登录
                                                     </button>
                                                 </div>
+
+                                                <p class="text-center mb-0">
+                                                    还没有账号？<span class="link" id="show-register">注册</span>
+                                                </p>
+                                            </form>
+
+                                            <!-- 注册表单（默认隐藏） -->
+                                            <form id="register-form" method="post" action="/api/v1/general/register"
+                                                class="hidden">
+                                                <h4 class="fw-bold mb-4" style="color: #98b4e2">
+                                                    注册教师账户
+                                                </h4>
+                                                <p class="mb-4" style="color: #7f9ccc">
+                                                    请输入以下信息来创建一个新的教师账户
+                                                </p>
+                                                <div class="form-outline mb-4">
+                                                    <input type="text" id="register-username" class="form-control" />
+                                                    <hr />
+                                                    <label class="form-label" for="register-username">用户名</label>
+                                                </div>
+
+                                                <div class="form-outline mb-4">
+                                                    <input type="text" id="register-number" class="form-control" />
+                                                    <hr />
+                                                    <label class="form-label" for="register-number">工号</label>
+                                                </div>
+
+                                                <div class="form-outline mb-4">
+                                                    <input type="password" id="register-password"
+                                                        class="form-control" />
+                                                    <hr />
+                                                    <label class="form-label" for="register-password">密码</label>
+                                                </div>
+
+                                                <div class="form-outline mb-4">
+                                                    <input type="text" id="register-name" class="form-control" />
+                                                    <hr />
+                                                    <label class="form-label" for="register-name">真实姓名</label>
+                                                </div>
+
+                                                <div class="d-flex justify-content-end pt-1 mb-4">
+                                                    <button id="register-button" class="btn btn-primary btn-rounded"
+                                                        type="submit" style="background-color: #7f9ccc" disabled>
+                                                        注册
+                                                    </button>
+                                                </div>
+
+                                                <p class="text-center mb-0">
+                                                    已有账号？<span class="link" id="show-login">登录</span>
+                                                </p>
                                             </form>
                                         </div>
                                     </div>
@@ -95,31 +159,167 @@
     </section>
 
     <script>
-        const usernameInput = document.getElementById("username");
-        const passwordInput = document.getElementById("password");
-        const usernameLabel = document.querySelector('label[for="username"]');
-        const passwordLabel = document.querySelector('label[for="password"]');
+        document.addEventListener("DOMContentLoaded", function () {
+            // 登录表单元素
+            const loginUsernameInput = document.getElementById("login-username");
+            const loginPasswordInput = document.getElementById("login-password");
+            const loginButton = document.getElementById("login-button");
+            const loginForm = document.getElementById("login-form");
 
-        usernameInput.addEventListener("input", () => {
-            if (usernameInput.value.trim() !== "") {
-                usernameLabel.style.display = "none";
-            } else {
-                usernameLabel.style.display = "block";
+            // 注册表单元素
+            const registerUsernameInput =
+                document.getElementById("register-username");
+            const registerNumberInput = document.getElementById("register-number");
+            const registerPasswordInput =
+                document.getElementById("register-password");
+            const registerNameInput = document.getElementById("register-name");
+            const registerButton = document.getElementById("register-button");
+            const registerForm = document.getElementById("register-form");
+
+            // 切换按钮
+            const showRegisterBtn = document.getElementById("show-register");
+            const showLoginBtn = document.getElementById("show-login");
+
+            // 函数：检查登录表单输入
+            function checkLoginInputs() {
+                const username = loginUsernameInput.value.trim();
+                const password = loginPasswordInput.value.trim();
+                loginButton.disabled = !(username !== "" && password !== "");
             }
+
+            // 函数：检查注册表单输入
+            function checkRegisterInputs() {
+                const username = registerUsernameInput.value.trim();
+                const number = registerNumberInput.value.trim();
+                const password = registerPasswordInput.value.trim();
+                const name = registerNameInput.value.trim();
+                registerButton.disabled = !(
+                    username !== "" &&
+                    number !== "" &&
+                    password !== "" &&
+                    name !== ""
+                );
+            }
+
+            // 添加事件监听器到登录表单输入
+            loginUsernameInput.addEventListener("input", checkLoginInputs);
+            loginPasswordInput.addEventListener("input", checkLoginInputs);
+
+            // 添加事件监听器到注册表单输入
+            registerUsernameInput.addEventListener("input", checkRegisterInputs);
+            registerNumberInput.addEventListener("input", checkRegisterInputs);
+            registerPasswordInput.addEventListener("input", checkRegisterInputs);
+            registerNameInput.addEventListener("input", checkRegisterInputs);
+
+            // 切换到注册表单
+            showRegisterBtn.addEventListener("click", function () {
+                loginForm.classList.add("hidden");
+                registerForm.classList.remove("hidden");
+            });
+
+            // 切换到登录表单
+            showLoginBtn.addEventListener("click", function () {
+                registerForm.classList.add("hidden");
+                loginForm.classList.remove("hidden");
+            });
+
+            // 处理登录表单提交
+            loginForm.addEventListener("submit", function (e) {
+                e.preventDefault(); // 阻止默认的表单提交
+
+                const username = loginUsernameInput.value.trim();
+                const password = loginPasswordInput.value.trim();
+
+                // 准备要发送的数据
+                const data = {
+                    username: username,
+                    password: password,
+                };
+
+                // 发送 POST 请求
+                fetch("/api/v1/general/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                    credentials: "include", // 包括凭证（如 Cookie）
+                })
+                    .then((response) => {
+                        // 检查响应是否成功
+                        if (!response.ok) {
+                            throw new Error("网络响应不是 OK");
+                        }
+                        // 解析 JSON
+                        return response.json();
+                    })
+                    .then((data) => {
+                        if (data.success) {
+                            // 假设服务器通过 Set-Cookie 设置了 token，浏览器会自动处理
+                            // 重定向到 /dashboard
+                            window.location.href = "/dashboard";
+                        } else {
+                            // 登录失败，弹出提示
+                            alert("登录失败: " + data.msg);
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Fetch 操作遇到问题:", error);
+                        alert("登录过程中发生错误，请稍后再试。");
+                    });
+            });
+
+            // 处理注册表单提交
+            registerForm.addEventListener("submit", function (e) {
+                e.preventDefault(); // 阻止默认的表单提交
+
+                const username = registerUsernameInput.value.trim();
+                const number = registerNumberInput.value.trim();
+                const password = registerPasswordInput.value.trim();
+                const name = registerNameInput.value.trim();
+
+                // 准备要发送的数据
+                const data = {
+                    username: username,
+                    number: number,
+                    password: password,
+                    name: name,
+                };
+
+                // 发送 POST 请求
+                fetch("/api/v1/general/register", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                    credentials: "include", // 包括凭证（如 Cookie）
+                })
+                    .then((response) => {
+                        // 检查响应是否成功
+                        if (!response.ok) {
+                            throw new Error("网络响应不是 OK");
+                        }
+                        // 解析 JSON
+                        return response.json();
+                    })
+                    .then((data) => {
+                        if (data.success) {
+                            // 假设服务器通过 Set-Cookie 设置了 token，浏览器会自动处理
+                            // 重定向到 /dashboard
+                            window.location.href = "/dashboard";
+                        } else {
+                            // 注册失败，弹出提示
+                            alert("注册失败: " + data.msg);
+                        }
+                    })
+                    .catch((error) => {
+                        console.error("Fetch 操作遇到问题:", error);
+                        alert("注册过程中发生错误，请稍后再试。");
+                    });
+            });
         });
-
-        passwordInput.addEventListener("input", () => {
-            if (passwordInput.value.trim() !== "") {
-                passwordLabel.style.display = "none";
-            } else {
-                passwordLabel.style.display = "block";
-            }
-        });
-
-        function checkInputValid() {
-            if (usernameInput.value == "" || passwordInput.value == "") {
-                alert("用户名和密码均不能为空！")
-            }
-        }
     </script>
 </body>
+
+</html>

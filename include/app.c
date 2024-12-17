@@ -22,7 +22,7 @@ History:        暂无
  * @param op   运算符标识，0123分别对应+-×÷
  * @return float 正确答案
  */
-float calculate_result(float num1, float num2, int op)
+float calculate_result(int num1, int num2, int op)
 {
     switch (op)
     {
@@ -33,7 +33,7 @@ float calculate_result(float num1, float num2, int op)
     case 2:
         return num1 * num2;
     case 3:
-        return num1 / num2;
+        return (float)num1 / (float)num2;
     }
 }
 
@@ -57,3 +57,32 @@ int judge(float result, float user_input)
 }
 
 /**************************** 问题模型部分结束 ****************************/
+
+/**************************** 用户操作部分开始 ****************************/
+
+/**
+ * @brief 用户重置密码调用的函数
+ * 
+ * @param username 用户的用户名，必须根据此进行索引
+ * @param hashpass 用户新密码的哈希值
+ * @param salt 用户新密码的盐
+ * @return int 成功返回0，失败返回1
+ */
+int reset_password(const char *username, const char *hashpass, const char *salt)
+{
+    ;
+}
+
+/**
+ * @brief 用户登录函数
+ * 
+ * @param username 用户的用户名
+ * @param hashpass 用户输入的密码经过哈希后的值
+ * @return int 成功返回0，失败返回1
+ */
+int do_login_verify(const char *username, const char *hashpass)
+{
+    ;
+}
+
+/**************************** 用户操作部分结束 ****************************/

@@ -1,4 +1,4 @@
-from __init__ import *
+from . import *
 from ctypes import c_char_p, c_int, POINTER
 
 
@@ -108,11 +108,15 @@ def query_score_info(key: str, content: str) -> SqlResponseScore:
         return None  # 查询失败，返回 None
 
 
-def query_exams_info_all(length: int) -> list[SqlResponseExam]:
+def query_exams_info_all(
+    length: int, key: str = None, content: str = None
+) -> list[SqlResponseExam]:
     """
     @brief 查询所有考试信息，并返回查询结果。
 
     @param length 要查询的考试数量。
+    @param key 要查询的条件索引
+    @param content 条件索引的内容
 
     @return list 查询到的所有考试信息列表，若查询失败返回空列表。
     """
@@ -130,11 +134,15 @@ def query_exams_info_all(length: int) -> list[SqlResponseExam]:
         return []
 
 
-def query_users_info_all(length: int) -> list[SqlResponseUser]:
+def query_users_info_all(
+    length: int, key: str = None, content: str = None
+) -> list[SqlResponseUser]:
     """
     @brief 查询所有用户信息，并返回查询结果。
 
     @param length 要查询的用户数量。
+    @param key 要查询的条件索引
+    @param content 条件索引的内容
 
     @return list 查询到的所有用户信息列表，若查询失败返回空列表。
     """
@@ -142,7 +150,12 @@ def query_users_info_all(length: int) -> list[SqlResponseUser]:
     users_to_return = (SqlResponseUser * length)()
 
     # 调用C函数，查询所有用户信息
-    result = DATABASE_LIB.query_users_info_all(ctypes.byref(users_to_return[0]), length)
+    result = DATABASE_LIB.query_users_info_all(
+        ctypes.byref(users_to_return[0]),
+        length,
+        key.encode() if key else None,
+        content.encode() if content else None,
+    )
 
     if result == 0:
         # 查询成功，返回所有用户信息
@@ -152,11 +165,15 @@ def query_users_info_all(length: int) -> list[SqlResponseUser]:
         return []
 
 
-def query_questions_info_all(length: int) -> list[SqlResponseQuestion]:
+def query_questions_info_all(
+    length: int, key: str = None, content: str = None
+) -> list[SqlResponseQuestion]:
     """
     @brief 查询所有问题信息，并返回查询结果。
 
-    @param length 要查询的问题数量。
+    @param length 要查询的问题数量
+    @param key 要查询的条件索引
+    @param content 条件索引的内容
 
     @return list 查询到的所有问题信息列表，若查询失败返回空列表。
     """
@@ -165,7 +182,7 @@ def query_questions_info_all(length: int) -> list[SqlResponseQuestion]:
 
     # 调用C函数，查询所有问题信息
     result = DATABASE_LIB.query_questions_info_all(
-        ctypes.byref(questions_to_return[0]), length
+        ctypes.byref(questions_to_return[0]), length, key, content
     )
 
     if result == 0:
@@ -176,11 +193,15 @@ def query_questions_info_all(length: int) -> list[SqlResponseQuestion]:
         return []
 
 
-def query_scores_info_all(length: int) -> list[SqlResponseScore]:
+def query_scores_info_all(
+    length: int, key: str = None, content: str = None
+) -> list[SqlResponseScore]:
     """
     @brief 查询所有成绩信息，并返回查询结果。
 
     @param length 要查询的成绩数量。
+    @param key 要查询的条件索引
+    @param content 条件索引的内容
 
     @return list 查询到的所有成绩信息列表，若查询失败返回空列表。
     """
@@ -189,7 +210,7 @@ def query_scores_info_all(length: int) -> list[SqlResponseScore]:
 
     # 调用C函数，查询所有成绩信息
     result = DATABASE_LIB.query_scores_info_all(
-        ctypes.byref(scores_to_return[0]), length
+        ctypes.byref(scores_to_return[0]), length, key, content
     )
 
     if result == 0:
@@ -483,11 +504,12 @@ def edit_question_data(
 
 
 if __name__ == "__main__":
+
     def test_query_user_info():
         key = "username"
         content = "john_doe"
         user = query_user_info(key, content)
-        
+
         if user:
             print(user)
         else:
@@ -497,7 +519,7 @@ if __name__ == "__main__":
         key = "id"
         content = "exam_002"
         exam = query_exam_info(key, content)
-        
+
         if exam:
             print(exam)
         else:
@@ -507,7 +529,7 @@ if __name__ == "__main__":
         key = "id"
         content = "q002"
         question = query_question_info(key, content)
-        
+
         if question:
             print(question)
         else:
@@ -517,7 +539,7 @@ if __name__ == "__main__":
         key = "id"
         content = "score_001"
         score = query_score_info(key, content)
-        
+
         if score:
             print(score)
         else:
@@ -526,7 +548,7 @@ if __name__ == "__main__":
     def test_query_exams_info_all():
         length = 5  # Example: We want to query top 5 exams
         exams = query_exams_info_all(length)
-        
+
         if exams:
             for exam in exams:
                 print(exam)
@@ -536,7 +558,7 @@ if __name__ == "__main__":
     def test_query_users_info_all():
         length = 5  # Example: We want to query top 5 users
         users = query_users_info_all(length)
-        
+
         if users:
             for user in users:
                 print(user)
@@ -546,7 +568,7 @@ if __name__ == "__main__":
     def test_query_questions_info_all():
         length = 5  # Example: We want to query top 5 questions
         questions = query_questions_info_all(length)
-        
+
         if questions:
             for question in questions:
                 print(question)
@@ -556,7 +578,7 @@ if __name__ == "__main__":
     def test_query_scores_info_all():
         length = 5  # Example: We want to query top 5 scores
         scores = query_scores_info_all(length)
-        
+
         if scores:
             for score in scores:
                 print(score)
@@ -570,9 +592,16 @@ if __name__ == "__main__":
         end_time = 1700500000  # Example timestamp
         allow_answer_when_expired = 0  # No
         random_question = 1  # Yes
-        
-        result = insert_exam_data(exam_id, name, start_time, end_time, allow_answer_when_expired, random_question)
-        
+
+        result = insert_exam_data(
+            exam_id,
+            name,
+            start_time,
+            end_time,
+            allow_answer_when_expired,
+            random_question,
+        )
+
         if result == 1:
             print("Exam Data Inserted Successfully!")
         else:
@@ -584,9 +613,9 @@ if __name__ == "__main__":
         num1 = 5
         op = 1  # Plus
         num2 = 10
-        
+
         result = insert_question_data(question_id, exam_id, num1, op, num2)
-        
+
         if result == 1:
             print("Question Data Inserted Successfully!")
         else:
@@ -598,9 +627,9 @@ if __name__ == "__main__":
         user_id = "john_doe"
         score = 95.5
         expired_flag = 0  # Not expired
-        
+
         result = insert_score_data(score_id, exam_id, user_id, score, expired_flag)
-        
+
         if result == 1:
             print("Score Data Inserted Successfully!")
         else:
@@ -616,9 +645,11 @@ if __name__ == "__main__":
         class_name = "Computer Science"
         number = 123456
         belong_to = "University XYZ"
-        
-        result = insert_user_data(user_id, username, hashpass, salt, role, name, class_name, number, belong_to)
-        
+
+        result = insert_user_data(
+            user_id, username, hashpass, salt, role, name, class_name, number, belong_to
+        )
+
         if result == 1:
             print("User Data Inserted Successfully!")
         else:
@@ -638,4 +669,5 @@ if __name__ == "__main__":
         test_query_users_info_all()
         test_query_questions_info_all()
         test_query_scores_info_all()
+
     run_tests()

@@ -11,8 +11,10 @@ from flask import (
 import json
 import jwt
 import datetime
+from route.api import general_api_v1, user_api_v1, teacher_api_v1, student_api_v1
 
 app = Flask(__name__)
+app.register_blueprint(general_api_v1)
 
 app.template_folder = "templates"
 
