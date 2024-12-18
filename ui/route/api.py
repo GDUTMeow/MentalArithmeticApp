@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, Response, make_response 
-from utils.database import query_user_info, query_users_info_all, User, insert_user_data
+from utils.database import query_user_info, query_users_info_all, User, insert_user_data, edit_user_data
+from utils.tools import generate_salt
 from hashlib import sha512
 import jwt
 import random
@@ -50,7 +51,7 @@ def general_login() -> Response:
         }
     response = make_response(body)
     if body.get("success"):
-        cookie = jwt.encode({"role": user.role, "username": user.username.decode()}, JWT_KEY, algorithm="HS256")
+        cookie = jwt.encode({"role": user.role, "id": user.id.decode()}, JWT_KEY, algorithm="HS256")
         cookie_age = 604800  # 7*24*60*60
         response.set_cookie("token", cookie, max_age=cookie_age)
     return response
@@ -63,7 +64,6 @@ def general_register() -> Response:
     number: int = int(data.get("number", "0"))
     username: str = data.get("username", "")
     password: str = data.get("password", "")
-    print(int(number))
     if name and number and username and password:
         user = query_user_info(key="username", content=username)
         if user.id: # 当查到id不为空的时候，说明此用户存在
@@ -75,43 +75,43 @@ def general_register() -> Response:
             if len(username) < 3:
                 body = {
                     "success": False,
-                    "msg": f"用户名 {username} 太短啦！"
+                    "msg": f"用户名 {username} 太短啦 😣"
                 }
                 return body
             if len(username) > 24:
                 body = {
                     "success": False,
-                    "msg": f"用户名 {username} 太长啦！"
+                    "msg": f"用户名 {username} 太长啦 😣"
                 }
                 return body
             for i in username:  # 检测用户名是否合法
                 if i not in (string.ascii_letters + string.digits):
                     body = {
                         "success": False,
-                        "msg": f"用户名 {username} 中包含非法字符 {i}！"
+                        "msg": f"用户名 {username} 中包含非法字符 {i} 😦"
                     }
                     return body
             if int(number) > 4294967295:
                 body = {
                     "success": False,
-                    "msg": f"工号 {number} 太长了，看起来不是合法的工号！"
+                    "msg": f"工号 {number} 太长了，看起来不是合法的工号 😦"
                 }
                 return body
             if int(number) <= 0:
                 body = {
                     "success": False,
-                    "msg": f"你输入了一个非法的工号 {number}，请不要尝试在这里玩栈溢出！"
+                    "msg": f"你输入了一个非法的工号 {number}，请不要尝试在这里玩栈溢出 😥"
                 }
                 return body
             if len(name.encode()) > 45:
                 body = {
                     "success": False,
-                    "msg": f"你的名字 {name} 太长啦，看起来不是合法的名字！"    # 按照公安部的规定，中文人名最长为15个汉字
+                    "msg": f"你的名字 {name} 太长啦，看起来不是合法的名字 😦"    # 按照公安部的规定，中文人名最长为15个汉字
                 }
             else:
                 user_id = str(uuid.uuid4())
                 username = username
-                salt = "".join(random.choices(string.ascii_letters + string.digits, k=16))
+                salt = generate_salt()
                 hashpass = sha512((salt + password).encode()).hexdigest()
                 role = 1
                 name = name
@@ -126,31 +126,51 @@ def general_register() -> Response:
                 else:
                     body = {
                         "success": False,
-                        "msg": "请查看日志获取详细信息！"
+                        "msg": "请查看日志获取详细信息 😦"
                     }
             
     else:
         body = {
             "success": False,
-            "msg": "发送的数据中未正确填写各项信息！"
+            "msg": "发送的数据中未正确填写各项信息 😦"
         }
     response = make_response(body)
     return response
 
-@user_api_v1.route("/api/v1/user/getInfo")
-def user_get_info():
-    pass
 
-
-@user_api_v1.route("/api/v1/user/logout")
-def user_logout():
-    pass
-
-
-@user_api_v1.route("/api/v1/user/changePassword", methods=["POST"])
-def user_change_password():
-    pass
-
+@user_api_v1.route("/api/v1/user/modifyPassword", methods=["POST"])
+def user_modify_password():
+    data = request.json
+    user_id = data.get("userId")
+    original_password = data.get("originalPassword")
+    new_password = data.get("newPassword")
+    user = query_users_info_all(1, key="id", content=user_id)
+    if user:
+        user = user[0]
+        if user.hashpass.decode() == sha512((user.salt.decode() + original_password).encode()).hexdigest():
+            salt = generate_salt()
+            hashpass = sha512((salt + new_password).encode()).hexdigest()
+            if edit_user_data(user.id.decode(), user.username.decode(), hashpass, salt, user.role, user.name.decode(), user.class_name.decode(), user.number, user.belong_to.decode()):
+                body = {
+                    "success": True,
+                    "msg": "已成功修改密码"
+                }
+            else:
+                body = {
+                    "success": False,
+                    "msg": "未知原因修改失败！请查看 log 文件内容获取更多信息！"
+                }
+        else:
+            body = {
+                "success": False,
+                "msg": "原密码不正确，请重新输入！"
+            }
+    else:
+        body = {
+            "success": False,
+            "msg": "请求错误！请检查请求参数！"
+        }
+    return body
 
 @student_api_v1.route("/api/v1/student/getExamInfo")
 def student_get_exam_info():

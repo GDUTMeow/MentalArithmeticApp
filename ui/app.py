@@ -12,9 +12,11 @@ import json
 import jwt
 import datetime
 from route.api import general_api_v1, user_api_v1, teacher_api_v1, student_api_v1
+from utils.database import query_user_info
 
 app = Flask(__name__)
 app.register_blueprint(general_api_v1)
+app.register_blueprint(user_api_v1)
 
 app.template_folder = "templates"
 
@@ -110,6 +112,30 @@ def render_dashboard():
         try:
             data = jwt.decode(token, key, algorithms=["HS256"])
             if data.get("role", -1) in [0, 1]:
+                if data.get("id", ""):
+                    user = query_user_info(key="id", content=data.get("id"))
+                    print(user)
+                    if user:
+                        user_data = {
+                            "name": user.name.decode(),
+                            "username": user.username.decode(),
+                            "number": user.number,
+                            "class_name": user.class_name.decode() if user.class_name else "",
+                            "role": user.role,
+                            "id": user.id.decode()
+                        }
+                        return render_template(
+                            "dashboard.html",
+                            user = user_data
+                        )
+                    else:
+                        # 当前查询的用户不存在，认为JWT_KEY遭到泄露，强制弹回登录页面
+                        response = make_response(render_template("dashboard.html"))
+                        response.delete_cookie("token")
+                        return response
+                else:
+                    return render_template("dashboard.html")
+            else:
                 return render_template("dashboard.html")
         except jwt.InvalidTokenError:
             pass

@@ -135,6 +135,7 @@ int query_user_info(const char *key, const char *content, struct User *user_to_r
     // 打开数据库
     if (open_database(USER_DB, &db))
     {
+        printf("打开数据库失败了……");
         return 1; // 打开数据库失败
     }
 
@@ -162,18 +163,18 @@ int query_user_info(const char *key, const char *content, struct User *user_to_r
     if (rc == SQLITE_ROW)
     {
         // 从查询结果中提取数据
-        strncpy(user_to_return->id, (const char *)sqlite3_column_text(stmt, 0), sizeof(user_to_return->id) - 1);
-        strncpy(user_to_return->username, (const char *)sqlite3_column_text(stmt, 1), sizeof(user_to_return->username) - 1);
+        strncpy(user_to_return->id, (const char *)sqlite3_column_text(stmt, 0), 37);
+        strncpy(user_to_return->username, (const char *)sqlite3_column_text(stmt, 1), 25);
 
         // hashpass和salt不在User结构体中使用，略过
         // sqlite3_column_text(stmt, 2) => hashpass
         // sqlite3_column_text(stmt, 3) => salt
 
         user_to_return->role = sqlite3_column_int(stmt, 4);
-        strncpy(user_to_return->name, (const char *)sqlite3_column_text(stmt, 5), sizeof(user_to_return->name) - 1);
-        strncpy(user_to_return->class_name, (const char *)sqlite3_column_text(stmt, 6), sizeof(user_to_return->class_name) - 1);
+        strncpy(user_to_return->name, (const char *)sqlite3_column_text(stmt, 5), 46);
+        strncpy(user_to_return->class_name, (const char *)sqlite3_column_text(stmt, 6), 31);
         user_to_return->number = (unsigned int)sqlite3_column_int(stmt, 7);
-        strncpy(user_to_return->belong_to, (const char *)sqlite3_column_text(stmt, 8), sizeof(user_to_return->belong_to) - 1);
+        strncpy(user_to_return->belong_to, (const char *)sqlite3_column_text(stmt, 8), 37);
 
         // 获取用户权限
         user_to_return->permission = get_permission(*user_to_return);
@@ -1655,7 +1656,7 @@ int edit_user_data(const char *user_id, const char *username, const char *hashpa
         goto cleanup;
     }
 
-    rc = sqlite3_bind_text(stmt, 4, (const char *)&role, -1, SQLITE_STATIC); // 建议使用 sqlite3_bind_int
+    rc = sqlite3_bind_int(stmt, 4, role);
     if (rc != SQLITE_OK)
     {
         get_current_time(current_time, sizeof(current_time));
@@ -1679,7 +1680,7 @@ int edit_user_data(const char *user_id, const char *username, const char *hashpa
         goto cleanup;
     }
 
-    rc = sqlite3_bind_text(stmt, 7, (const char *)&number, -1, SQLITE_STATIC); // 建议使用 sqlite3_bind_int
+    rc = sqlite3_bind_int(stmt, 7, number);
     if (rc != SQLITE_OK)
     {
         get_current_time(current_time, sizeof(current_time));
@@ -2077,3 +2078,34 @@ cleanup:
 }
 
 /**************************** 单条数据修改结束 ****************************/
+
+int main()
+{
+    SetConsoleOutputCP(65001);
+    // 查询单个用户测试
+    struct Permission permission = {-1, -1, -1, -1, -1, -1, -1, -1};
+    struct User user = {
+        "",
+        "",
+        -1,
+        "",
+        "",
+        -1,
+        permission,
+        ""};
+    query_user_info("id", "abcdefgh-ijkl-4mno-pqrs-tuvwxyz12345", &user);
+    log_message(LOGLEVEL_INFO, "id=%s, username=%s, role=%d, name=%s, class_name=%s, number=%u, belong_to=%s", user.id, user.username, user.role, user.name, user.class_name, user.number, user.belong_to);
+    // 修改单个用户测试
+    edit_user_data(
+        "438de9e3-3180-44a3-b205-53514076f334",
+        "STUDENT",
+        "660e5568eef2348d55214737232baa7968f4d2a9037904ff20500f4b525d354cd46e65bcc898227aad8539bb13d07d2ca23756ecfa085d948b3e209cdd989af8",
+        "THISISASALTSTRIN",
+        0,
+        "学生",
+        "班级",
+        1234567890,
+        "abcdefgh-ijkl-4mno-pqrs-tuvwxyz12345"
+    );
+    return 0;
+}

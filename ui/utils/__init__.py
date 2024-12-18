@@ -6,46 +6,6 @@ from ctypes import c_char_p, c_int, POINTER
 # 数据库dll
 DATABASE_LIB: ctypes.CDLL = ctypes.CDLL("./database.dll")
 
-
-class User(ctypes.Structure):
-    """
-    表示系统中的用户。
-
-    Attributes:
-        id (ctypes.c_char * 37): 用户的唯一标识符。
-        username (ctypes.c_char * 37): 用户的用户名。
-        role (ctypes.c_int): 用户的角色标识符。
-        name (ctypes.c_char * 100): 用户的真实姓名。
-        class_name (ctypes.c_char * 50): 用户所属的班级名称。
-        number (ctypes.c_uint): 用户的工号。
-        belong_to (ctypes.c_char * 50): 用户所属的部门或组织。
-        permission (ctypes.c_int): 用户的权限级别。
-    """
-
-    _fields_ = [
-        ("id", ctypes.c_char * 37),
-        ("username", ctypes.c_char * 37),
-        ("role", ctypes.c_int),
-        ("name", ctypes.c_char * 100),
-        ("class_name", ctypes.c_char * 50),
-        ("number", ctypes.c_uint),
-        ("belong_to", ctypes.c_char * 50),
-        ("permission", ctypes.c_int),
-    ]
-
-    def __repr__(self):
-        return (
-            f"User(id={self.id.decode('utf-8')}, "
-            f"username={self.username.decode('utf-8')}, "
-            f"role={self.role}, "
-            f"name={self.name.decode('utf-8')}, "
-            f"class_name={self.class_name.decode('utf-8')}, "
-            f"number={self.number}, "
-            f"belong_to={self.belong_to.decode('utf-8')}, "
-            f"permission={self.permission})"
-        )
-
-
 class Permission(ctypes.Structure):
     """
     表示用户的权限设置。
@@ -85,13 +45,53 @@ class Permission(ctypes.Structure):
         )
 
 
+class User(ctypes.Structure):
+    """
+    表示系统中的用户。
+
+    Attributes:
+        id (ctypes.c_char * 37): 用户的唯一标识符。
+        username (ctypes.c_char * 25): 用户的用户名。
+        role (ctypes.c_int): 用户的角色标识符。
+        name (ctypes.c_char * 46): 用户的真实姓名。
+        class_name (ctypes.c_char * 50): 用户所属的班级名称。
+        number (ctypes.c_uint): 用户的工号。
+        belong_to (ctypes.c_char * 50): 用户所属的部门或组织。
+        permission (Permission): 用户的权限级别。
+    """
+    _fields_ = [
+        ("id", ctypes.c_char * 37),
+        ("username", ctypes.c_char * 25),
+        ("role", ctypes.c_int),
+        ("name", ctypes.c_char * 46),
+        ("class_name", ctypes.c_char * 31),
+        ("number", ctypes.c_uint),
+        ("belong_to", ctypes.c_char * 37),
+        ("permission", Permission),
+    ]
+
+    def __repr__(self):
+        return (
+            f"User(id={self.id.decode('utf-8')}, "
+            f"username={self.username.decode('utf-8')}, "
+            f"role={self.role}, "
+            f"name={self.name.decode('utf-8')}, "
+            f"class_name={self.class_name.decode('utf-8')}, "
+            f"number={self.number}, "
+            f"belong_to={self.belong_to.decode('utf-8')}, "
+            f"permission={self.permission})"
+        )
+
+
+
+
 class SqlResponseExam(ctypes.Structure):
     """
     表示考试信息的响应结构。
 
     Attributes:
         id (ctypes.c_char * 37): 考试的唯一标识符。
-        name (ctypes.c_char * 100): 考试的名称。
+        name (ctypes.c_char * 91): 考试的名称。
         start_time (ctypes.c_int): 考试的开始时间（时间戳）。
         end_time (ctypes.c_int): 考试的结束时间（时间戳）。
         allow_answer_when_expired (ctypes.c_int): 考试过期后是否允许答题。
@@ -100,7 +100,7 @@ class SqlResponseExam(ctypes.Structure):
 
     _fields_ = [
         ("id", ctypes.c_char * 37),
-        ("name", ctypes.c_char * 100),
+        ("name", ctypes.c_char * 91),
         ("start_time", ctypes.c_int),
         ("end_time", ctypes.c_int),
         ("allow_answer_when_expired", ctypes.c_int),
