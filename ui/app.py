@@ -11,12 +11,14 @@ from flask import (
 import json
 import jwt
 import datetime
-from route.api import general_api_v1, user_api_v1, teacher_api_v1, student_api_v1
+from route.api import general_api_v1, user_api_v1, teacher_api_v1, student_api_v1, student_get_exam_info
 from utils.database import query_user_info
 
 app = Flask(__name__)
 app.register_blueprint(general_api_v1)
 app.register_blueprint(user_api_v1)
+app.register_blueprint(student_api_v1)
+app.register_blueprint(teacher_api_v1)
 
 app.template_folder = "templates"
 
@@ -124,9 +126,11 @@ def render_dashboard():
                             "role": user.role,
                             "id": user.id.decode()
                         }
+                        print(student_get_exam_info(retJSON=1) if user.role == 0 else None)
                         return render_template(
                             "dashboard.html",
-                            user = user_data
+                            user = user_data,
+                            exam = student_get_exam_info(retJSON=1) if user.role == 0 else None
                         )
                     else:
                         # 当前查询的用户不存在，认为JWT_KEY遭到泄露，强制弹回登录页面

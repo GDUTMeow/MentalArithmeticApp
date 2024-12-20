@@ -17,6 +17,7 @@ History:        暂无
 
 #include <math.h>
 #include <stdlib.h>
+#include "../include/model.h"
 
 /**************************** 问题模型部分 ****************************/
 /**
@@ -74,7 +75,11 @@ int judge(float result, float user_input)
  */
 int generate_question_list(const char *exam_id, struct Question *question_list_to_return)
 {
-    ;
+    // 定义保存问题的结构体列表
+    struct SqlResponseQuestion *question_list = (struct SqlResponseQuestion *)malloc(sizeof(struct SqlResponseQuestion) * 100);
+    // 调用query_question_info_all函数从数据库中获取指定考试id的所有题目
+
+    return 0;
 }
 
 /**

@@ -1,11 +1,20 @@
-from flask import Blueprint, request, jsonify, Response, make_response 
-from utils.database import query_user_info, query_users_info_all, User, insert_user_data, edit_user_data
+from flask import Blueprint, request, jsonify, Response, make_response
+from utils.database import (
+    query_user_info,
+    query_users_info_all,
+    User,
+    insert_user_data,
+    edit_user_data,
+    query_exam_info,
+    query_exams_info_all,
+)
 from utils.tools import generate_salt
 from hashlib import sha512
 import jwt
 import random
 import uuid
 import string
+import time
 
 JWT_KEY = "GamerNoTitle"
 
@@ -16,6 +25,7 @@ student_api_v1 = Blueprint("student", __name__)
 teacher_api_v1 = Blueprint("teacher", __name__)
 
 general_api_v1 = Blueprint("general", __name__)
+
 
 @general_api_v1.route("/api/v1/general/login", methods=["POST"])
 def general_login() -> Response:
@@ -28,30 +38,24 @@ def general_login() -> Response:
         user = query_users_info_all(1, key="username", content=username)
         if len(user) == 0:
             # 查询失败，没有符合条件的条目
-            body = {
-                "success": False,
-                "msg": "用户名或密码不匹配！"
-            }
+            body = {"success": False, "msg": "用户名或密码不匹配！"}
         else:
             user = user[0]
-            if user.username == username.encode() and user.hashpass.decode() == sha512((user.salt.decode() + password).encode()).hexdigest():
-                body = {
-                    "success": True,
-                    "msg": "登录成功"
-                }
+            if (
+                user.username == username.encode()
+                and user.hashpass.decode()
+                == sha512((user.salt.decode() + password).encode()).hexdigest()
+            ):
+                body = {"success": True, "msg": "登录成功"}
             else:
-                body = {
-                    "success": False,
-                    "msg": "用户名或密码不匹配！"
-                }
+                body = {"success": False, "msg": "用户名或密码不匹配！"}
     else:
-        body = {
-            "success": False,
-            "msg": "用户名或密码不能为空！"
-        }
+        body = {"success": False, "msg": "用户名或密码不能为空！"}
     response = make_response(body)
     if body.get("success"):
-        cookie = jwt.encode({"role": user.role, "id": user.id.decode()}, JWT_KEY, algorithm="HS256")
+        cookie = jwt.encode(
+            {"role": user.role, "id": user.id.decode()}, JWT_KEY, algorithm="HS256"
+        )
         cookie_age = 604800  # 7*24*60*60
         response.set_cookie("token", cookie, max_age=cookie_age)
     return response
@@ -66,47 +70,41 @@ def general_register() -> Response:
     password: str = data.get("password", "")
     if name and number and username and password:
         user = query_user_info(key="username", content=username)
-        if user.id: # 当查到id不为空的时候，说明此用户存在
+        if user.id:  # 当查到id不为空的时候，说明此用户存在
             body = {
                 "success": False,
-                "msg": f"当前使用的用户名 {username} 已经被使用了！"
+                "msg": f"当前使用的用户名 {username} 已经被使用了！",
             }
         else:
             if len(username) < 3:
-                body = {
-                    "success": False,
-                    "msg": f"用户名 {username} 太短啦 😣"
-                }
+                body = {"success": False, "msg": f"用户名 {username} 太短啦 😣"}
                 return body
             if len(username) > 24:
-                body = {
-                    "success": False,
-                    "msg": f"用户名 {username} 太长啦 😣"
-                }
+                body = {"success": False, "msg": f"用户名 {username} 太长啦 😣"}
                 return body
             for i in username:  # 检测用户名是否合法
                 if i not in (string.ascii_letters + string.digits):
                     body = {
                         "success": False,
-                        "msg": f"用户名 {username} 中包含非法字符 {i} 😦"
+                        "msg": f"用户名 {username} 中包含非法字符 {i} 😦",
                     }
                     return body
             if int(number) > 4294967295:
                 body = {
                     "success": False,
-                    "msg": f"工号 {number} 太长了，看起来不是合法的工号 😦"
+                    "msg": f"工号 {number} 太长了，看起来不是合法的工号 😦",
                 }
                 return body
             if int(number) <= 0:
                 body = {
                     "success": False,
-                    "msg": f"你输入了一个非法的工号 {number}，请不要尝试在这里玩栈溢出 😥"
+                    "msg": f"你输入了一个非法的工号 {number}，请不要尝试在这里玩栈溢出 😥",
                 }
                 return body
             if len(name.encode()) > 45:
                 body = {
                     "success": False,
-                    "msg": f"你的名字 {name} 太长啦，看起来不是合法的名字 😦"    # 按照公安部的规定，中文人名最长为15个汉字
+                    "msg": f"你的名字 {name} 太长啦，看起来不是合法的名字 😦",  # 按照公安部的规定，中文人名最长为15个汉字
                 }
             else:
                 user_id = str(uuid.uuid4())
@@ -118,28 +116,29 @@ def general_register() -> Response:
                 class_name = ""
                 number = number
                 belong_to = ""
-                if insert_user_data(user_id, username, hashpass, salt, role, name, class_name, number, belong_to):
-                    body = {
-                        "success": True,
-                        "msg": "注册成功"
-                    }
+                if insert_user_data(
+                    user_id,
+                    username,
+                    hashpass,
+                    salt,
+                    role,
+                    name,
+                    class_name,
+                    number,
+                    belong_to,
+                ):
+                    body = {"success": True, "msg": "注册成功"}
                 else:
-                    body = {
-                        "success": False,
-                        "msg": "请查看日志获取详细信息 😦"
-                    }
-            
+                    body = {"success": False, "msg": "请查看日志获取详细信息 😦"}
+
     else:
-        body = {
-            "success": False,
-            "msg": "发送的数据中未正确填写各项信息 😦"
-        }
+        body = {"success": False, "msg": "发送的数据中未正确填写各项信息 😦"}
     response = make_response(body)
     return response
 
 
 @user_api_v1.route("/api/v1/user/modifyPassword", methods=["POST"])
-def user_modify_password():
+def user_modify_password() -> Response:
     data = request.json
     user_id = data.get("userId")
     original_password = data.get("originalPassword")
@@ -147,38 +146,110 @@ def user_modify_password():
     user = query_users_info_all(1, key="id", content=user_id)
     if user:
         user = user[0]
-        if user.hashpass.decode() == sha512((user.salt.decode() + original_password).encode()).hexdigest():
+        if (
+            user.hashpass.decode()
+            == sha512((user.salt.decode() + original_password).encode()).hexdigest()
+        ):
             salt = generate_salt()
             hashpass = sha512((salt + new_password).encode()).hexdigest()
-            if edit_user_data(user.id.decode(), user.username.decode(), hashpass, salt, user.role, user.name.decode(), user.class_name.decode(), user.number, user.belong_to.decode()):
-                body = {
-                    "success": True,
-                    "msg": "已成功修改密码"
-                }
+            if edit_user_data(
+                user.id.decode(),
+                user.username.decode(),
+                hashpass,
+                salt,
+                user.role,
+                user.name.decode(),
+                user.class_name.decode(),
+                user.number,
+                user.belong_to.decode(),
+            ):
+                body = {"success": True, "msg": "已成功修改密码"}
             else:
                 body = {
                     "success": False,
-                    "msg": "未知原因修改失败！请查看 log 文件内容获取更多信息！"
+                    "msg": "未知原因修改失败！请查看 log 文件内容获取更多信息！",
                 }
+        else:
+            body = {"success": False, "msg": "原密码不正确，请重新输入！"}
+    else:
+        body = {"success": False, "msg": "请求错误！请检查请求参数！"}
+    return jsonify(body)
+
+
+@student_api_v1.route("/api/v1/student/getExamInfo")
+def student_get_exam_info(retJSON: int = 0) -> Response | dict:
+    exams = query_exams_info_all(999)
+    print(exams)
+    if exams:
+        # 按开始时间升序排序
+        exams.sort(key=lambda x: x.start_time)
+        now = time.time()
+
+        active_exam = None
+        next_exam = None
+
+        # 选择的考试逻辑说明
+        # 优先选择正在激活的考试（当前时间戳大于开始时间且小于结束时间），否则选择临近开始最近的考试
+        # 如果没有临近开始的考试，则返回无考试
+        for exam in exams:
+            if exam.start_time <= now < exam.end_time:
+                active_exam = exam
+                break  # 找到激活的考试后退出循环
+            elif exam.start_time > now and next_exam is None:
+                next_exam = exam
+                # 不中断循环，继续检查是否有激活的考试
+
+        if active_exam:
+            exam_to_return = active_exam
+        elif next_exam:
+            exam_to_return = next_exam
+        else:
+            exam_to_return = None
+
+        if exam_to_return:
+            body = {
+                "success": True,
+                "metadata": {
+                        "id": exam_to_return.id.decode(),
+                        "name": exam_to_return.name.decode(),
+                        "start_time": exam_to_return.start_time,
+                        "end_time": exam_to_return.end_time,
+                        "allow_answer_when_expired": exam_to_return.allow_answer_when_expired,
+                        "random_question": exam_to_return.random_question,
+                },
+                "data": []
+            }
         else:
             body = {
                 "success": False,
-                "msg": "原密码不正确，请重新输入！"
+                "metadata": {
+                        "id": "",
+                        "name": "没有即将进行的考试",
+                        "start_time": -1,
+                        "end_time": -1,
+                        "allow_answer_when_expired": -1,
+                        "random_question": -1,
+                },
+                "data": [],
             }
     else:
         body = {
             "success": False,
-            "msg": "请求错误！请检查请求参数！"
+            "metadata": {
+                    "id": "",
+                    "name": "没有即将进行的考试",
+                    "start_time": -1,
+                    "end_time": -1,
+                    "allow_answer_when_expired": -1,
+                    "random_question": -1,
+            },
+            "data": [],
         }
-    return body
-
-@student_api_v1.route("/api/v1/student/getExamInfo")
-def student_get_exam_info():
-    pass
+    return body if retJSON else jsonify(body)
 
 
-@student_api_v1.route("/api/v1/student/getExamData")
-def student_get_exam_data():
+@student_api_v1.route("/api/v1/student/getExamData/<uuid:UUID>")
+def student_get_exam_data(UUID: str) -> Response:
     pass
 
 

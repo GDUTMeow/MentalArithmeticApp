@@ -5,17 +5,33 @@
             <div class="card text-center border border-primary shadow-0 w-100">
                 <div class="card-body">
                     <h5 class="card-title" style="padding-bottom: 10px">
-                        {{ exam and exam.metadata and exam.metadata.title or "这是一场不存在的考试" }}
+                        {{ exam and exam.metadata and exam.metadata.name or "无考试" }}
                     </h5>
                     <p class="card-text">
-                        {{ exam and exam.metadata and exam.metadata.description or "description" }}
+                        <ul id="exam-metadata">
+                            <li>
+                                考试开始时间：
+                                <span id="start-timestamp" class="timestamp" data-timestamp="{{ exam.metadata.start_time }}">
+                                    {{ exam.metadata.start_time }}
+                                </span>
+                            </li>
+                            <li>
+                                考试结束时间：
+                                <span id="end-timestamp" class="timestamp" data-timestamp="{{ exam.metadata.end_time }}">
+                                    {{ exam.metadata.end_time }}
+                                </span>
+                            </li>
+                            <li>是否允许逾期作答：{{ "是" if exam.metadata.allow_answer_when_expired else "否" }}</li>
+                            <li>是否开启随机题目顺序：{{ "是" if exam.metadata.random_question else "否"}}</li>
+                        </ul>
                     </p>
-                    <button type="button" class="btn btn-primary enter-exam btn-color-dashboard-primary" onclick="initializeExam()">
+                    <button type="button" id="enter-exam-btn" class="btn btn-primary enter-exam btn-color-dashboard-primary"
+                        onclick="initializeExam()">
                         进入考试
                     </button>
                 </div>
                 <div class="card-footer">
-                    剩余时间：{{ exam and exam.metadata and exam.metadata.time_left or 56562 }}
+                    剩余时间：<span id="time-left">{{ exam and exam.metadata and exam.metadata.time_left or 56562 }}</span>
                 </div>
             </div>
         </div>
@@ -88,7 +104,7 @@
 
     async function initializeExam() {
         try {
-            const res = await fetch("/api/v1/user/getExamData", {
+            const res = await fetch("/api/v1/student/getExamData/{{ exam and exam.metadata and exam.metadata.id or '' }}", {
                 method: "GET",
                 credentials: "include", // 确保请求携带Cookie
             });
@@ -159,7 +175,7 @@
         }
     });
 
-    document.getElementById("submit-btn").addEventListener("click", async() => {
+    document.getElementById("submit-btn").addEventListener("click", async () => {
         saveCurrentAnswer();
         // 提交答案
         const endTime = Math.floor(Date.now() / 1000);
@@ -171,7 +187,7 @@
         };
 
         try {
-            const res = await fetch("/api/v1/user/examSubmit", {
+            const res = await fetch("/api/v1/student/examSubmit", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -199,4 +215,109 @@
                 "提交时发生错误，请稍后重试。";
         }
     });
+</script>
+
+<script>
+    /**
+     * 将 Unix 时间戳转换为 'YYYY-MM-DD HH:mm:ss' 格式的字符串。
+     * @param {number} timestamp - Unix 时间戳（秒级）。
+     * @returns {string} 格式化后的时间字符串。
+     */
+    function formatTimestamp(timestamp) {
+        const date = new Date(timestamp * 1000); // JavaScript 使用毫秒级时间戳
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从0开始
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+
+        return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+    }
+
+    /**
+     * 计算并更新剩余时间。
+     * @param {number} endTimestamp - 考试结束时间的 Unix 时间戳（秒级）。
+     */
+    function updateTimeLeft(endTimestamp) {
+        const timeLeftElement = document.getElementById('time-left');
+        let timerInterval; // 在函数顶部声明 timerInterval
+
+        function calculateAndDisplay() {
+            const now = Math.floor(Date.now() / 1000); // 当前时间戳（秒级）
+            let remaining = endTimestamp - now;
+
+            if (remaining > 0) {
+                // 计算剩余时间的小时、分钟和秒数
+                const hours = Math.floor(remaining / 3600);
+                const minutes = Math.floor((remaining % 3600) / 60);
+                const seconds = remaining % 60;
+
+                // 格式化为 HH:mm:ss
+                const formattedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                timeLeftElement.textContent = formattedTime;
+            } else {
+                // 时间已过，显示“考试已结束”并停止计时
+                timeLeftElement.textContent = "考试已结束";
+                if (!{{exam.metadata.allow_answer_when_expired}}) {
+                    document.getElementById('enter-exam-btn').disabled = true;
+                }
+                clearInterval(timerInterval);
+            }
+        }
+
+        // 初始调用
+        calculateAndDisplay();
+
+        // 每秒更新一次
+        timerInterval = setInterval(calculateAndDisplay, 1000);
+    }
+
+    /**
+     * 初始化考试入口并设置剩余时间计时器。
+     */
+    function initializeExamEntrance() {
+        const examEntrance = document.getElementById('exam-entrance');
+        if (examEntrance) {
+            // 显示考试入口
+            examEntrance.style.display = 'block';
+
+            // 获取考试开始时间和结束时间的时间戳
+            const startTimeElement = document.getElementById('start-timestamp');
+            const endTimeElement = document.getElementById('end-timestamp');
+
+            if (startTimeElement && endTimeElement) {
+                const startTimestamp = parseInt(startTimeElement.getAttribute('data-timestamp'), 10);
+                const endTimestamp = parseInt(endTimeElement.getAttribute('data-timestamp'), 10);
+
+                if (!isNaN(startTimestamp) && startTimestamp > 0) {
+                    // 转换并显示开始时间
+                    startTimeElement.textContent = formatTimestamp(startTimestamp);
+                } else {
+                    // 无效的开始时间戳，显示“无”
+                    startTimeElement.textContent = "无";
+                }
+
+                if (!isNaN(endTimestamp) && endTimestamp > 0) {
+                    // 转换并显示结束时间
+                    endTimeElement.textContent = formatTimestamp(endTimestamp);
+
+                    // 初始化剩余时间计时器
+                    updateTimeLeft(endTimestamp);
+                } else {
+                    // 无效的结束时间戳，显示“无”
+                    endTimeElement.textContent = "无";
+                    document.getElementById('time-left').textContent = "无";
+                }
+            } else {
+                // 未找到时间元素，显示“无”
+                document.getElementById('time-left').textContent = "无";
+            }
+
+        }
+    }
+
+    // 在页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', initializeExamEntrance);
 </script>

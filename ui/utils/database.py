@@ -124,11 +124,11 @@ def query_exams_info_all(
     exams_to_return = (SqlResponseExam * length)()
 
     # 调用C函数，查询所有考试信息
-    result = DATABASE_LIB.query_exams_info_all(ctypes.byref(exams_to_return[0]), length)
+    result = DATABASE_LIB.query_exams_info_all(ctypes.byref(exams_to_return[0]), length, key, content)
 
     if result == 0:
         # 查询成功，返回所有考试信息
-        return [exam for exam in exams_to_return]
+        return [exam for exam in exams_to_return if exam.id]
     else:
         # 查询失败，返回空列表
         return []
