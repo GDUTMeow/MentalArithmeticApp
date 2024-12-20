@@ -93,3 +93,12 @@
 - 创建了基本的目录结构，并创建了 `model.h`，用于定义各种模型
 - 定义了用户模型（结构体 `User`），用于存储用户的各种属性
 - 添加了函数 `isAdmin`，用于判断用户是否为管理员
+
+## Credit
+
+- [@ricky8955555 (Phrinky)](https://github.com/ricky8955555)
+- [mdbootstrap/mdb-ui-kit: Bootstrap 5 &amp; Material Design UI KIT](https://github.com/mdbootstrap/mdb-ui-kit)
+- [iconfont-阿里巴巴矢量图标库](https://www.iconfont.cn/)
+- [SQL database engine](https://github.com/sqlite/sqlite)
+- [commitizen/cz-conventional-changelog: A commitizen adapter for the angular preset of https://github.com/conventional-changelog/conventional-changelog](https://github.com/commitizen/cz-conventional-changelog)
+- [pallets/flask: The Python micro framework for building web applications.](https://github.com/pallets/flask/)
