@@ -33,6 +33,7 @@ EXEMPT_PATHS = [
     "/login",
     "/static/",
     "/",
+    "/favicon.png"
 ]
 
 
@@ -159,7 +160,6 @@ def logout_handler():
         "token", jwt.encode({"role": -1}, key, algorithm="HS256"), max_age=0
     )
     return response
-
 
 if __name__ == "__main__":
     print("Student token:", jwt.encode({"role": 0}, key, algorithm="HS256"))
