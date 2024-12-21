@@ -12,7 +12,12 @@ History:        暂无
                       [+] 加入了 get_current_time 函数，用于获取当前时间并保存为 YYYY-MM-DD HH:mm:SS 的格式
  */
 
+#ifndef UTILS_H
+#define UTILS_H
+
 #include <time.h>  // 用于获取当前时间
 
 void get_current_time(char *buffer, size_t size);
 void log_message(const char *level, const char *format, ...);
+
+#endif

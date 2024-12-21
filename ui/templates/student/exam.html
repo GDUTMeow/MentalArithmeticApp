@@ -110,19 +110,25 @@
             });
             const data = await res.json();
             if (data.success) {
-                examData = data.data;
-                examId = examData.id;
-                document.getElementById("exam-name").textContent = examData.name;
+                const metadata = data.metadata;
+                const questions = data.data;
+    
+                examId = metadata.id;
+                document.getElementById("exam-name").textContent = metadata.name;
+    
                 const examEntrance = document.getElementById("exam-entrance");
                 examEntrance.classList.add("fade-out");
                 examEntrance.classList.remove("fade-in");
                 examEntrance.style.display = "none";
+    
                 const examContainer = document.getElementById("exam-container");
                 examContainer.classList.remove("fade-out");
                 examContainer.classList.add("fade-in");
                 examContainer.style.display = "";
-                answers = new Array(examData.questions.count).fill(null);
-
+    
+                answers = new Array(questions.length).fill(null);
+                examData = { metadata, questions }; // 合并为一个对象，便于后续使用
+    
                 // 显示第一题
                 showQuestion(0);
                 document.getElementById("exam-container").style.display = "block";
@@ -136,24 +142,26 @@
             alert("初始化考试失败，请检查网络连接或稍后重试。");
         }
     }
-
     function showQuestion(index) {
-        const q = examData.questions.data[index];
+        const q = examData.questions[index];
         document.getElementById("num1").textContent = q.num1;
         document.getElementById("operator").textContent = operatorMap[q.op];
         document.getElementById("num2").textContent = q.num2;
         document.getElementById("answer-input").value =
             answers[index] !== null ? answers[index] : "";
-
+    
         // 控制按钮显示
         document.getElementById("prev-btn").style.display =
             index === 0 ? "none" : "inline-block";
         document.getElementById("next-btn").style.display =
-            index === examData.questions.count - 1 ? "none" : "inline-block";
+            index === examData.questions.length - 1 ? "none" : "inline-block";
         document.getElementById("submit-btn").style.display =
-            index === examData.questions.count - 1 ? "inline-block" : "none";
+            index === examData.questions.length - 1 ? "inline-block" : "none";
+    
+        // 更新当前索引
+        currentIndex = index;
     }
-
+        
     function saveCurrentAnswer() {
         const ans = document.getElementById("answer-input").value;
         answers[currentIndex] = ans;
@@ -166,15 +174,15 @@
             showQuestion(currentIndex);
         }
     });
-
+    
     document.getElementById("next-btn").addEventListener("click", () => {
         saveCurrentAnswer();
-        if (currentIndex < examData.questions.count - 1) {
+        if (currentIndex < examData.questions.length - 1) {
             currentIndex++;
             showQuestion(currentIndex);
         }
     });
-
+    
     document.getElementById("submit-btn").addEventListener("click", async () => {
         saveCurrentAnswer();
         // 提交答案

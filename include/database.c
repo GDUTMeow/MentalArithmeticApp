@@ -38,6 +38,10 @@ History:        暂无
         ID: GamerNoTitle
         Modification:   [*] 更改了题目的操作数数据类型，从float改为int
                         [*] 现在允许在批量查询的过程中设置条件
+    6.  Date: 2024/12/21
+        Author: 吴沛熹
+        ID: GamerNoTitle
+        Modification:   [-] 删除了错误的初始化过程
  */
 
 #include <stdio.h>
@@ -299,12 +303,6 @@ int query_question_info(const char *key, const char *content, struct SqlResponse
     {
         return 1;
     }
-
-    // 采用了一个很笨的方式来初始化，避免后面读取再出问题
-    strcpy(question_to_return->id, "");
-    strcpy(question_to_return->exam_id, "");
-    question_to_return->id[36] = '\0';
-    question_to_return->exam_id[36] = '\0';
 
     // 准备查询语句
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
@@ -751,12 +749,6 @@ int query_questions_info_all(struct SqlResponseQuestion *questions_to_return, in
 
     // 启用外键支持
     sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, NULL);
-
-    // 初始化传入的 questions_to_return，避免出错
-    for (int i = 0; i < length; i++)
-    {
-        strcpy(questions_to_return[i].id, "");
-    }
 
     // 准备查询语句
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
@@ -2079,33 +2071,33 @@ cleanup:
 
 /**************************** 单条数据修改结束 ****************************/
 
-int main()
-{
-    SetConsoleOutputCP(65001);
-    // 查询单个用户测试
-    struct Permission permission = {-1, -1, -1, -1, -1, -1, -1, -1};
-    struct User user = {
-        "",
-        "",
-        -1,
-        "",
-        "",
-        -1,
-        permission,
-        ""};
-    query_user_info("id", "abcdefgh-ijkl-4mno-pqrs-tuvwxyz12345", &user);
-    log_message(LOGLEVEL_INFO, "id=%s, username=%s, role=%d, name=%s, class_name=%s, number=%u, belong_to=%s", user.id, user.username, user.role, user.name, user.class_name, user.number, user.belong_to);
-    // 修改单个用户测试
-    edit_user_data(
-        "438de9e3-3180-44a3-b205-53514076f334",
-        "STUDENT",
-        "660e5568eef2348d55214737232baa7968f4d2a9037904ff20500f4b525d354cd46e65bcc898227aad8539bb13d07d2ca23756ecfa085d948b3e209cdd989af8",
-        "THISISASALTSTRIN",
-        0,
-        "学生",
-        "班级",
-        1234567890,
-        "abcdefgh-ijkl-4mno-pqrs-tuvwxyz12345"
-    );
-    return 0;
-}
+// int main()
+// {
+//     SetConsoleOutputCP(65001);
+//     // 查询单个用户测试
+//     struct Permission permission = {-1, -1, -1, -1, -1, -1, -1, -1};
+//     struct User user = {
+//         "",
+//         "",
+//         -1,
+//         "",
+//         "",
+//         -1,
+//         permission,
+//         ""};
+//     query_user_info("id", "abcdefgh-ijkl-4mno-pqrs-tuvwxyz12345", &user);
+//     log_message(LOGLEVEL_INFO, "id=%s, username=%s, role=%d, name=%s, class_name=%s, number=%u, belong_to=%s", user.id, user.username, user.role, user.name, user.class_name, user.number, user.belong_to);
+//     // 修改单个用户测试
+//     edit_user_data(
+//         "438de9e3-3180-44a3-b205-53514076f334",
+//         "STUDENT",
+//         "660e5568eef2348d55214737232baa7968f4d2a9037904ff20500f4b525d354cd46e65bcc898227aad8539bb13d07d2ca23756ecfa085d948b3e209cdd989af8",
+//         "THISISASALTSTRIN",
+//         0,
+//         "学生",
+//         "班级",
+//         1234567890,
+//         "abcdefgh-ijkl-4mno-pqrs-tuvwxyz12345"
+//     );
+//     return 0;
+// }

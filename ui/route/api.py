@@ -7,7 +7,9 @@ from utils.database import (
     edit_user_data,
     query_exam_info,
     query_exams_info_all,
+    query_questions_info_all,
 )
+from utils.app import generate_question_list, randomize_question_list, traverse_question_list
 from utils.tools import generate_salt
 from hashlib import sha512
 import jwt
@@ -210,25 +212,25 @@ def student_get_exam_info(retJSON: int = 0) -> Response | dict:
             body = {
                 "success": True,
                 "metadata": {
-                        "id": exam_to_return.id.decode(),
-                        "name": exam_to_return.name.decode(),
-                        "start_time": exam_to_return.start_time,
-                        "end_time": exam_to_return.end_time,
-                        "allow_answer_when_expired": exam_to_return.allow_answer_when_expired,
-                        "random_question": exam_to_return.random_question,
+                    "id": exam_to_return.id.decode(),
+                    "name": exam_to_return.name.decode(),
+                    "start_time": exam_to_return.start_time,
+                    "end_time": exam_to_return.end_time,
+                    "allow_answer_when_expired": exam_to_return.allow_answer_when_expired,
+                    "random_question": exam_to_return.random_question,
                 },
-                "data": []
+                "data": [],
             }
         else:
             body = {
                 "success": False,
                 "metadata": {
-                        "id": "",
-                        "name": "没有即将进行的考试",
-                        "start_time": -1,
-                        "end_time": -1,
-                        "allow_answer_when_expired": -1,
-                        "random_question": -1,
+                    "id": "",
+                    "name": "没有即将进行的考试",
+                    "start_time": -1,
+                    "end_time": -1,
+                    "allow_answer_when_expired": -1,
+                    "random_question": -1,
                 },
                 "data": [],
             }
@@ -236,12 +238,12 @@ def student_get_exam_info(retJSON: int = 0) -> Response | dict:
         body = {
             "success": False,
             "metadata": {
-                    "id": "",
-                    "name": "没有即将进行的考试",
-                    "start_time": -1,
-                    "end_time": -1,
-                    "allow_answer_when_expired": -1,
-                    "random_question": -1,
+                "id": "",
+                "name": "没有即将进行的考试",
+                "start_time": -1,
+                "end_time": -1,
+                "allow_answer_when_expired": -1,
+                "random_question": -1,
             },
             "data": [],
         }
@@ -250,7 +252,48 @@ def student_get_exam_info(retJSON: int = 0) -> Response | dict:
 
 @student_api_v1.route("/api/v1/student/getExamData/<uuid:UUID>")
 def student_get_exam_data(UUID: str) -> Response:
-    pass
+    exam = query_exam_info(key="id", content=str(UUID))
+    if exam:
+        body = {
+            "success": True,
+            "metadata": {
+                "id": exam.id.decode(),
+                "name": exam.name.decode(),
+                "start_time": exam.start_time,
+                "end_time": exam.end_time,
+                "allow_answer_when_expired": exam.allow_answer_when_expired,
+                "random_question": exam.random_question,
+            },
+            "data": [],
+        }
+        questions = [item for item in query_questions_info_all(999, key="exam_id", content=str(UUID)) if item.id.decode() != ""]
+        original_list_ptr = generate_question_list(str(UUID), len(questions))
+        original_question_list = traverse_question_list(questions)
+        if exam.random_question:
+            randomize_question_list = original_question_list.copy()
+            for index in range(len(randomize_question_list))[::-1]: # Fisher-Yates
+                seed = int(time.time())
+                random.seed(seed)
+                random_index = random.randint(0, len(questions) - 1)    # randint是双端闭区间，所以要-1
+                randomize_question_list[index], randomize_question_list[random_index] = randomize_question_list[random_index], randomize_question_list[index]
+            body["data"] = randomize_question_list
+        else:
+            body["data"] = original_question_list
+    else:
+        body = {
+            "success": False,
+            "msg": f"错误！未找到id为 {str(UUID)} 的考试！",
+            "metadata": {
+                "id": "",
+                "name": "没有即将进行的考试",
+                "start_time": -1,
+                "end_time": -1,
+                "allow_answer_when_expired": -1,
+                "random_question": -1,
+            },
+            "data": [],
+        }
+    return jsonify(body)
 
 
 @student_api_v1.route("/api/v1/student/getScoreList")

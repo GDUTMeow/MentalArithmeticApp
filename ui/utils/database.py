@@ -109,7 +109,7 @@ def query_score_info(key: str, content: str) -> SqlResponseScore:
 
 
 def query_exams_info_all(
-    length: int, key: str = None, content: str = None
+    length: int, key: str = "", content: str = ""
 ) -> list[SqlResponseExam]:
     """
     @brief 查询所有考试信息，并返回查询结果。
@@ -124,7 +124,7 @@ def query_exams_info_all(
     exams_to_return = (SqlResponseExam * length)()
 
     # 调用C函数，查询所有考试信息
-    result = DATABASE_LIB.query_exams_info_all(ctypes.byref(exams_to_return[0]), length, key, content)
+    result = DATABASE_LIB.query_exams_info_all(ctypes.byref(exams_to_return[0]), length, c_char_p(key.encode()), c_char_p(content.encode()))
 
     if result == 0:
         # 查询成功，返回所有考试信息
@@ -182,7 +182,7 @@ def query_questions_info_all(
 
     # 调用C函数，查询所有问题信息
     result = DATABASE_LIB.query_questions_info_all(
-        ctypes.byref(questions_to_return[0]), length, key, content
+        ctypes.byref(questions_to_return[0]), length, c_char_p(key.encode()), c_char_p(str(content).encode())
     )
 
     if result == 0:

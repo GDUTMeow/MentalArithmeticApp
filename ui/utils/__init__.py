@@ -1,10 +1,13 @@
 # C语言函数调用器，在这里定义了一些函数，用于直接调用我需要的C语言代码
 
 import ctypes
+import os
 from ctypes import c_char_p, c_int, POINTER
 
-# 数据库dll
-DATABASE_LIB: ctypes.CDLL = ctypes.CDLL("./database.dll")
+# dll链接
+APP_LIB = ctypes.CDLL(os.path.join(os.getcwd(), "app.dll"))
+DATABASE_LIB = ctypes.CDLL(os.path.join(os.getcwd(), "database.dll"))
+
 
 class Permission(ctypes.Structure):
     """
@@ -59,6 +62,7 @@ class User(ctypes.Structure):
         belong_to (ctypes.c_char * 50): 用户所属的部门或组织。
         permission (Permission): 用户的权限级别。
     """
+
     _fields_ = [
         ("id", ctypes.c_char * 37),
         ("username", ctypes.c_char * 25),
@@ -81,8 +85,6 @@ class User(ctypes.Structure):
             f"belong_to={self.belong_to.decode('utf-8')}, "
             f"permission={self.permission})"
         )
-
-
 
 
 class SqlResponseExam(ctypes.Structure):
@@ -219,6 +221,41 @@ class SqlResponseUser(ctypes.Structure):
             f"belong_to={self.belong_to.decode('utf-8')})"
         )
 
+
+class QuestionData(ctypes.Structure):
+    _fields_ = [
+        ("num1", c_int),  # int
+        ("op", c_int),    # int
+        ("num2", c_int),  # int
+    ]
+
+    def __repr__(self):
+        return f"QuestionData(num1={self.num1}, op={self.op}, num2={self.num2})"
+
+class Question(ctypes.Structure):
+    pass  # self-referential
+
+Question._fields_ = [
+    ("data", QuestionData),
+    ("next_question", POINTER(Question)),
+]
+
+def question_repr_with_cycle_detection(self):
+    questions = []
+    visited = set()
+    current = self
+    while current and id(current) not in visited:
+        questions.append(repr(current.data))
+        visited.add(id(current))
+        if current.next_question:
+            current = current.next_question.contents
+        else:
+            current = None
+    if current:
+        questions.append("... (cycle detected)")
+    return " -> ".join(questions)
+
+Question.__repr__ = question_repr_with_cycle_detection
 
 # 定义数据库函数的原型及返回值
 DATABASE_LIB.query_user_info.argtypes = [c_char_p, c_char_p, POINTER(User)]
@@ -359,3 +396,12 @@ DATABASE_LIB.edit_question_data.argtypes = [
     ctypes.c_int,  # num2
 ]
 DATABASE_LIB.edit_question_data.restype = ctypes.c_int
+
+APP_LIB.generate_question_list.argtypes = [c_char_p, POINTER(Question), c_int]
+APP_LIB.generate_question_list.restype = c_int
+
+APP_LIB.randomize_question_list.argtypes = [POINTER(Question), POINTER(Question)]
+APP_LIB.randomize_question_list.restype = c_int
+
+APP_LIB.free_question_list.argtypes = [POINTER(Question)]
+APP_LIB.free_question_list.restype = None

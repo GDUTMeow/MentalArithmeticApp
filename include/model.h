@@ -30,9 +30,16 @@ History:        暂无
         Modification:   [+] 添加了新的数据库返回结构体 SqlResponseExam、SqlResponseQuestions、
                             SqlResponseScores、SqlResponseUser，以便于在database.c的函数使用
                             此四种结构体进行SQL查询返回数据的解析
+    5.  Date: 2024/12/21
+        Author: 吴沛熹
+        ID: GamerNoTitle
+        Modification:   [*] 修改了QuestionData结构体的数据类型（其实是忘记改了）
  */
 
 #include <math.h>
+
+#ifndef MODEL_H
+#define MODEL_H
 
 /**************************** 用户模型和权限部分 ****************************/
 
@@ -98,9 +105,9 @@ struct Question
      */
     struct QuestionData
     {
-        float num1; // 第一个操作数
+        int num1; // 第一个操作数
         int op;     // 运算符
-        float num2; // 第二个操作数
+        int num2; // 第二个操作数
     };
     struct QuestionData data;       // 问题的数据部分，类型为上面定义的 QuestionData
     struct Question *next_question; // 问题链的下一个问题
@@ -169,3 +176,5 @@ struct SqlResponseUser
 };
 
 /**************************** 数据库结果返回结束 ****************************/
+
+#endif
