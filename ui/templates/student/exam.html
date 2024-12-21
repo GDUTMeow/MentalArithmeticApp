@@ -151,10 +151,10 @@
             answers[index] !== null ? answers[index] : "";
     
         // 控制按钮显示
-        document.getElementById("prev-btn").style.display =
-            index === 0 ? "none" : "inline-block";
-        document.getElementById("next-btn").style.display =
-            index === examData.questions.length - 1 ? "none" : "inline-block";
+        document.getElementById("prev-btn").disabled =
+            index === 0 ? true : false;
+        document.getElementById("next-btn").disabled =
+            index === examData.questions.length - 1 ? true : false;
         document.getElementById("submit-btn").style.display =
             index === examData.questions.length - 1 ? "inline-block" : "none";
     
@@ -185,14 +185,26 @@
     
     document.getElementById("submit-btn").addEventListener("click", async () => {
         saveCurrentAnswer();
+        // 禁用提交按钮以防止重复提交
+        const submitBtn = document.getElementById("submit-btn");
+        submitBtn.disabled = true;
+
         // 提交答案
         const endTime = Math.floor(Date.now() / 1000);
         const timeSpent = endTime - startTime;
-        const submitData = {
-            id: examId,
-            answers: answers,
-            timeSpent: timeSpent,
-        };
+        if (examData.metadata.random_question) {
+            var submitData = {
+                id: examId,
+                answers: answers,
+                timeSpent: timeSpent,
+                seed: examData.metadata.seed, // 添加 seed
+            };
+        } else {
+            var submitData = {
+                id: examId,
+                answers: answers,
+                timeSpent: timeSpent,
+        }};
 
         try {
             const res = await fetch("/api/v1/student/examSubmit", {
@@ -208,7 +220,7 @@
 
             // 显示成绩页面
             document.getElementById("exam-container").style.display = "none";
-            document.getElementById("scores-list-student").style.display = "block";
+            document.getElementById("exam-finish-prompt").style.display = "";
 
             if (result.success) {
                 document.getElementById("exam-result-msg").textContent =

@@ -2,7 +2,7 @@
 
 import ctypes
 import os
-from ctypes import c_char_p, c_int, POINTER
+from ctypes import c_char_p, c_int, POINTER, c_float
 
 # dll链接
 APP_LIB = ctypes.CDLL(os.path.join(os.getcwd(), "app.dll"))
@@ -405,3 +405,9 @@ APP_LIB.randomize_question_list.restype = c_int
 
 APP_LIB.free_question_list.argtypes = [POINTER(Question)]
 APP_LIB.free_question_list.restype = None
+
+APP_LIB.calculate_result.argtypes = [c_int, c_int, c_int]
+APP_LIB.calculate_result.restype = c_float
+
+APP_LIB.judge.argtypes = [c_float, c_float]
+APP_LIB.judge.restype = c_int

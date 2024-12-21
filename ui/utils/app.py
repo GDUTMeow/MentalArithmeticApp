@@ -10,7 +10,15 @@ def traverse_question_list(question_list: list):
     """
     questions = []
     for item in question_list:
-        questions.append({"num1": item.num1, "op": item.op, "num2": item.num2, "id": item.id.decode(), "exam_id": item.exam_id.decode()})
+        questions.append(
+            {
+                "num1": item.num1,
+                "op": item.op,
+                "num2": item.num2,
+                "id": item.id.decode(),
+                "exam_id": item.exam_id.decode(),
+            }
+        )
     return questions
 
 
@@ -96,3 +104,26 @@ if __name__ == "__main__":
             free_question_list_func(original_list_ptr)
         if "randomized_list_ptr" in locals():
             free_question_list_func(randomized_list_ptr)
+
+
+def judge(correct_answer: float, user_answer: float) -> bool:
+    """
+    @brief 判断用户答案是否正确。
+
+    @param correct_answer 正确答案
+    @param user_answer 用户答案
+    @return bool 是否正确
+    """
+    return APP_LIB.judge(c_float(correct_answer), c_float(user_answer))
+
+
+def calculate_result(num1: int, num2: int, op: int) -> float:
+    """
+    @brief 计算题目的结果。
+
+    @param num1 第一个数字
+    @param num2 第二个数字
+    @param op 运算符
+    @return float 结果
+    """
+    return APP_LIB.calculate_result(c_int(num1), c_int(num2), c_int(op))
