@@ -26,12 +26,12 @@
                         </ul>
                     </p>
                     <button type="button" id="enter-exam-btn" class="btn btn-primary enter-exam btn-color-dashboard-primary"
-                        onclick="initializeExam()">
-                        进入考试
+                        onclick="initializeExam()" {% if exam.done %} disabled {% endif %}>
+                        进入考试{% if exam.done %}（无法进入，因为你已经完成了这场考试）{% endif %}
                     </button>
                 </div>
                 <div class="card-footer">
-                    剩余时间：<span id="time-left">{{ exam and exam.metadata and exam.metadata.time_left or 56562 }}</span>
+                    剩余时间：<span id="time-left">{{ exam and exam.metadata and exam.metadata.time_left or "11 小时 45 分钟 14 秒" }}</span>
                 </div>
             </div>
         </div>
@@ -221,6 +221,7 @@
             // 显示成绩页面
             document.getElementById("exam-container").style.display = "none";
             document.getElementById("exam-finish-prompt").style.display = "";
+            document.getElementById("exam-result-msg").classList.remove("fade-out");
 
             if (result.success) {
                 document.getElementById("exam-result-msg").textContent =

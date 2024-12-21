@@ -21,6 +21,10 @@ History:        暂无
         ID: GamerNoTitle
         Modification: [+] 添加了对log/latest.log文件的新建，以防后面写入日志的时候文件不存在
                       [*] 对 questions 数据库的 num1 和 num2 列采用REAL类型存储
+    3.  Date:   2024/12/21
+        Author: 吴沛熹
+        ID: GamerNoTitle
+        Modification: [*] 对 questions 数据库的 num1 和 num2 列重新采用int类型存储
  */
 
 #include "../lib/sqlite3.h"
@@ -139,18 +143,18 @@ void initialize()
             char examination_init_command[] = "CREATE TABLE examinations(\n"
                                               "id TEXT PRIMARY KEY   NOT NULL,\n"         // 考试ID，UUID，唯一键
                                               "name TEXT             NOT NULL,\n"         // 考次名称
-                                              "start_time INT        NOT NULL,\n"         // 考试的开始时间，时间戳
-                                              "end_time INT          NOT NULL,\n"         // 考试的结束时间，时间戳
-                                              "allow_answer_when_expired INT NOT NULL,\n" // 是否允许逾期作答
-                                              "random_question INT   NOT NULL\n"          // 是否开启问题乱序
+                                              "start_time INTEGER        NOT NULL,\n"         // 考试的开始时间，时间戳
+                                              "end_time INTEGER          NOT NULL,\n"         // 考试的结束时间，时间戳
+                                              "allow_answer_when_expired INTEGER NOT NULL,\n" // 是否允许逾期作答
+                                              "random_question INTEGER   NOT NULL\n"          // 是否开启问题乱序
                                               ");\n";
             initialize_database(EXAMINATION_DB, examination_init_command, log_file);
             char questions_init_command[] = "CREATE TABLE questions(\n"
                                             "id TEXT PRIMARY KEY    NOT NULL,\n" // 问题ID，UUID，唯一键
                                             "exam_id TEXT           NOT NULL,\n" // 问题作用的考试ID，对应上面考次的UUID
-                                            "num1 INT           NOT NULL,\n"     // 第一个操作数字
+                                            "num1 INTEGER           NOT NULL,\n"     // 第一个操作数字
                                             "op INTEGER             NOT NULL,\n" // 运算符，0123对应加减乘除
-                                            "num2 INT           NOT NULL\n"      // 第二个操作数字
+                                            "num2 INTEGER           NOT NULL\n"      // 第二个操作数字
                                             ");\n";
             initialize_database(EXAMINATION_DB, questions_init_command, log_file);
             fprintf(log_file, "%s [%s]: 正在初始化成绩数据库。\n", current_time, LOGLEVEL_INFO);

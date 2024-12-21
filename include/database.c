@@ -42,6 +42,7 @@ History:        暂无
         Author: 吴沛熹
         ID: GamerNoTitle
         Modification:   [-] 删除了错误的初始化过程
+                        [*] 将学生的分数全部改为int类型存储，不在引入小数点
  */
 
 #include <stdio.h>
@@ -424,7 +425,7 @@ int query_score_info(const char *key, const char *content, struct SqlResponseSco
         strncpy(score_to_return->id, (const char *)sqlite3_column_text(stmt, 0), sizeof(score_to_return->id) - 1);
         strncpy(score_to_return->exam_id, (const char *)sqlite3_column_text(stmt, 1), sizeof(score_to_return->exam_id) - 1);
         strncpy(score_to_return->user_id, (const char *)sqlite3_column_text(stmt, 2), sizeof(score_to_return->user_id) - 1);
-        score_to_return->score = (float)sqlite3_column_double(stmt, 3);
+        score_to_return->score = sqlite3_column_int(stmt, 3);
         score_to_return->expired_flag = sqlite3_column_int(stmt, 4);
 
         log_message(LOGLEVEL_INFO, "成功查询到成绩信息，查询条件：%s = %s", key, content);
@@ -1196,7 +1197,7 @@ int insert_question_data(const char *question_id, const char *exam_id, int num1,
  * @param expired_flag 逾期作答标记，只有0和1合法
  * @return int 函数是否成功执行，成功返回0，否则返回1
  */
-int insert_score_data(const char *score_id, const char *exam_id, const char *user_id, float score, int expired_flag)
+int insert_score_data(const char *score_id, const char *exam_id, const char *user_id, int score, int expired_flag)
 {
     FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
     char current_time[20];
@@ -1213,11 +1214,11 @@ int insert_score_data(const char *score_id, const char *exam_id, const char *use
 
     // 定义绑定参数
     const void *bindings[] = {score_id, exam_id, user_id, &score, &expired_flag};
-    const BindType types[] = {BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_FLOAT, BIND_TYPE_INT};
+    const BindType types[] = {BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_INT, BIND_TYPE_INT};
 
     // 调用通用插入函数
     int result = insert_data_to_db(SCORES_DB, sql, bindings, types, 5);
-
+    log_message(LOGLEVEL_INFO, "成功插入了用户id为 %s 的成绩 %d\n", user_id, score);
     fclose(log_file);
     return result;
 }

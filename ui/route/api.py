@@ -8,9 +8,14 @@ from utils.database import (
     query_exam_info,
     query_exams_info_all,
     query_questions_info_all,
-    insert_score_data
+    insert_score_data,
+    query_scores_info_all,
 )
-from utils.app import generate_question_list, randomize_question_list, traverse_question_list
+from utils.app import (
+    generate_question_list,
+    randomize_question_list,
+    traverse_question_list,
+)
 from utils.tools import generate_salt, calculate_score
 from hashlib import sha512
 import jwt
@@ -182,7 +187,6 @@ def user_modify_password() -> Response:
 @student_api_v1.route("/api/v1/student/getExamInfo")
 def student_get_exam_info(retJSON: int = 0) -> Response | dict:
     exams = query_exams_info_all(999)
-    print(exams)
     if exams:
         # 按开始时间升序排序
         exams.sort(key=lambda x: x.start_time)
@@ -267,16 +271,28 @@ def student_get_exam_data(UUID: str) -> Response:
             },
             "data": [],
         }
-        questions = [item for item in query_questions_info_all(999, key="exam_id", content=str(UUID)) if item.id.decode() != ""]
+        questions = [
+            item
+            for item in query_questions_info_all(999, key="exam_id", content=str(UUID))
+            if item.id.decode() != ""
+        ]
         original_question_list = traverse_question_list(questions)
         if exam.random_question:
             randomize_question_list = original_question_list.copy()
             seed = int(time.time())
             random.seed(int(seed))
             body["metadata"]["seed"] = seed
-            for index in range(len(randomize_question_list))[::-1]: # Fisher-Yates
-                random_index = random.randint(0, len(questions) - 1)    # randint是双端闭区间，所以要-1
-                randomize_question_list[index], randomize_question_list[random_index] = randomize_question_list[random_index], randomize_question_list[index]
+            for index in range(len(randomize_question_list))[::-1]:  # Fisher-Yates
+                random_index = random.randint(
+                    0, len(questions) - 1
+                )  # randint是双端闭区间，所以要-1
+                (
+                    randomize_question_list[index],
+                    randomize_question_list[random_index],
+                ) = (
+                    randomize_question_list[random_index],
+                    randomize_question_list[index],
+                )
             body["data"] = randomize_question_list
         else:
             body["data"] = original_question_list
@@ -291,37 +307,108 @@ def student_get_exam_data(UUID: str) -> Response:
                 "end_time": -1,
                 "allow_answer_when_expired": -1,
                 "random_question": -1,
-                "seed": -1
+                "seed": -1,
             },
             "data": [],
         }
     return jsonify(body)
 
+
 @student_api_v1.route("/api/v1/student/examSubmit", methods=["POST"])
 def student_exam_submit():
-    data = request.json
-    exam_id: str = data.get("id")
-    answers: list[str] = map(float, data.get("answers"))
-    seed: int = data.get("seed", 0)
-    user_id = jwt.decode(request.cookies.get("token"), JWT_KEY, algorithms=["HS256"]).get("id")
-    exam = query_exam_info(key="id", content=exam_id)
-    if seed:
-        questions = [item for item in query_questions_info_all(999, key="exam_id", content=exam_id) if item.id.decode() != ""]
-        original_question_list = traverse_question_list(questions)
-        randomize_question_list = original_question_list.copy()
-        for index in range(len(randomize_question_list))[::-1]: # Fisher-Yates
-            random_index = random.randint(0, len(questions) - 1)    # randint是双端闭区间，所以要-1
-            randomize_question_list[index], randomize_question_list[random_index] = randomize_question_list[random_index], randomize_question_list[index]
-        question_list = randomize_question_list
-    else:
-        question_list = [item for item in query_questions_info_all(999, key="exam_id", content=exam_id) if item.id.decode() != ""]
-    score = calculate_score(question_list, answers)
-    insert_score_data(str(uuid.uuid4()), user_id, exam_id, score, 1 if time.time() > exam.end_time else 0)
-    return jsonify({"success": True, "msg": "提交成功！", "score": score})
+    try:
+        data = request.json
+        exam_id: str = data.get("id")
+        answers: list[str] = map(float, data.get("answers"))
+        seed: int = int(data.get("seed", 0))
+        user_id = jwt.decode(
+            request.cookies.get("token"), JWT_KEY, algorithms=["HS256"]
+        ).get("id")
+        exam = query_exam_info(key="id", content=exam_id)
+        if seed:
+            questions = [
+                item
+                for item in query_questions_info_all(
+                    999, key="exam_id", content=exam_id
+                )
+                if item.id.decode() != ""
+            ]
+            original_question_list = traverse_question_list(questions)
+            randomize_question_list = original_question_list.copy()
+            random.seed(seed)
+            for index in range(len(randomize_question_list))[::-1]:  # Fisher-Yates
+                random_index = random.randint(
+                    0, len(questions) - 1
+                )  # randint是双端闭区间，所以要-1
+                (
+                    randomize_question_list[index],
+                    randomize_question_list[random_index],
+                ) = (
+                    randomize_question_list[random_index],
+                    randomize_question_list[index],
+                )
+            question_list = randomize_question_list
+        else:
+            question_list = [
+                item
+                for item in query_questions_info_all(
+                    999, key="exam_id", content=exam_id
+                )
+                if item.id.decode() != ""
+            ]
+        score = calculate_score(question_list, answers)
+        insert_score_data(
+            str(uuid.uuid4()),
+            exam_id,
+            user_id,
+            score,
+            1 if time.time() > exam.end_time else 0,
+        )
+        body = {"success": True, "msg": "提交成功！", "score": score}
+    except Exception as e:
+        body = {"success": False, "msg": f"提交失败！{e}"}
+    return jsonify(body)
+
 
 @student_api_v1.route("/api/v1/student/getScoreList")
-def student_get_score_list():
-    pass
+def student_get_score_list(retJSON: int = 0):
+    scores = [item for item in query_scores_info_all(
+        999,
+        key="user_id",
+        content=jwt.decode(
+            request.cookies.get("token"), JWT_KEY, algorithms=["HS256"]
+        ).get("id"),
+    ) if item.id.decode() != ""]
+    exam_list = []
+    for score in scores:
+        exam_data = query_exam_info(key="id", content=score.exam_id.decode())
+        if exam_data:
+            exam_list.append(
+                {
+                    "id": score.id.decode(),
+                    "exam_id": score.exam_id.decode(),
+                    "exam_name": exam_data.name.decode(),
+                    "score": score.score,
+                    "expired": score.expired_flag,
+                }
+            )
+    if not exam_list:   # 没有任何成绩
+        body = {
+            "success": True,
+            "msg": "成绩获取成功",
+            "data": [
+                {
+                    "id": "score_id",
+                    "exam_id": "exam_id",
+                    "exam_name": "exam_name",
+                    "score": -1,
+                    "expired": False,
+                }
+            ],
+        }
+    else:
+        body = {"success": True, "msg": "成绩获取成功", "data": exam_list}
+    return body if retJSON else jsonify(body)
 
 
 @teacher_api_v1.route("/api/v1/teacher/addExam", methods=["POST"])

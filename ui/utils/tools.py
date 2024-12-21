@@ -20,13 +20,13 @@ def generate_correct_answer_list(question_list: list) -> list[float]:
     """
     return [question["correct_answer"] for question in question_list]
 
-def calculate_score(question_list: list, user_answer_list: list) -> float:
+def calculate_score(question_list: list, user_answer_list: list) -> int:
     """
     @brief 计算用户得分。
 
     @param question_list 问题列表
     @param user_answer_list 用户答案列表
-    @return float 得分
+    @return int 得分
     """
     # 计算总分
     total_score = 0
@@ -35,4 +35,4 @@ def calculate_score(question_list: list, user_answer_list: list) -> float:
         if judge(calculate_result(question.get("num1"), question.get("num2"), question.get("op")), answer):
             total_score += score_per_question
 
-    return round(total_score,2)
+    return int(total_score) # 分数只能是整数，否则数据库存储方面存储后会出问题

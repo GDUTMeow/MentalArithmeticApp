@@ -194,7 +194,7 @@ def query_questions_info_all(
 
 
 def query_scores_info_all(
-    length: int, key: str = None, content: str = None
+    length: int, key: str = "", content: str = ""
 ) -> list[SqlResponseScore]:
     """
     @brief 查询所有成绩信息，并返回查询结果。
@@ -210,7 +210,7 @@ def query_scores_info_all(
 
     # 调用C函数，查询所有成绩信息
     result = DATABASE_LIB.query_scores_info_all(
-        ctypes.byref(scores_to_return[0]), length, key, content
+        ctypes.byref(scores_to_return[0]), length, c_char_p(key.encode()), c_char_p(content.encode())
     )
 
     if result == 0:

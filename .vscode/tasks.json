@@ -15,7 +15,6 @@
                 "${workspaceFolder}\\include\\app.c",   // 动态加载函数库app
                 "${workspaceFolder}\\include\\model.c",   // 动态加载模型库model
                 "-o",
-                "-fsanitize=address",
                 // "${workspaceFolder}\\${fileBasenameNoExtension}.exe"
                 "${workspaceFolder}\\${fileBasenameNoExtension}.dll"
             ],

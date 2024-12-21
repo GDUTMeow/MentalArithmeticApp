@@ -34,6 +34,8 @@ History:        暂无
         Author: 吴沛熹
         ID: GamerNoTitle
         Modification:   [*] 修改了QuestionData结构体的数据类型（其实是忘记改了）
+                        [*] 修改了SqlResponseScore的成绩类型，从float更改为int
+                        [+] 添加了头文件包含保护，避免出现重复引用带来的重复定义问题
  */
 
 #include <math.h>
@@ -153,7 +155,7 @@ struct SqlResponseScore
     char id[37];      // 成绩的唯一ID，采用UUID4格式
     char exam_id[37]; // 成绩对应的考试ID，UUID4
     char user_id[37]; // 成绩对应的用户ID，UUID4
-    float score;      // 用户的成绩
+    int score;      // 用户的成绩
     int expired_flag; // 用户是否逾期作答，只允许0（正常作答）和1（逾期作答）
 };
 

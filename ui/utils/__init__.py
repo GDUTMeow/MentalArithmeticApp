@@ -158,7 +158,7 @@ class SqlResponseScore(ctypes.Structure):
         id (ctypes.c_char * 37): 成绩记录的唯一标识符。
         exam_id (ctypes.c_char * 37): 所属考试的唯一标识符。
         user_id (ctypes.c_char * 37): 所属用户的唯一标识符。
-        score (ctypes.c_double): 用户在考试中的得分。
+        score (ctypes.c_int): 用户在考试中的得分。
         expired_flag (ctypes.c_int): 成绩是否已过期的标志。
     """
 
@@ -166,7 +166,7 @@ class SqlResponseScore(ctypes.Structure):
         ("id", ctypes.c_char * 37),
         ("exam_id", ctypes.c_char * 37),
         ("user_id", ctypes.c_char * 37),
-        ("score", ctypes.c_double),
+        ("score", ctypes.c_int),
         ("expired_flag", ctypes.c_int),
     ]
 
@@ -340,7 +340,7 @@ DATABASE_LIB.insert_score_data.argtypes = [
     ctypes.c_char_p,  # score_id
     ctypes.c_char_p,  # exam_id
     ctypes.c_char_p,  # user_id
-    ctypes.c_float,  # score
+    ctypes.c_int,  # score
     ctypes.c_int,  # expired_flag
 ]
 

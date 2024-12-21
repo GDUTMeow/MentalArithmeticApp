@@ -11,8 +11,8 @@ from flask import (
 import json
 import jwt
 import datetime
-from route.api import general_api_v1, user_api_v1, teacher_api_v1, student_api_v1, student_get_exam_info
-from utils.database import query_user_info
+from route.api import general_api_v1, user_api_v1, teacher_api_v1, student_api_v1, student_get_exam_info, student_get_score_list
+from utils.database import query_user_info, query_score_info, query_scores_info_all
 
 app = Flask(__name__)
 app.register_blueprint(general_api_v1)
@@ -33,7 +33,6 @@ EXEMPT_PATHS = [
     "/login",
     "/static/",
     "/",
-    "/favicon.png"
 ]
 
 
@@ -117,7 +116,6 @@ def render_dashboard():
             if data.get("role", -1) in [0, 1]:
                 if data.get("id", ""):
                     user = query_user_info(key="id", content=data.get("id"))
-                    print(user)
                     if user:
                         user_data = {
                             "name": user.name.decode(),
@@ -127,12 +125,21 @@ def render_dashboard():
                             "role": user.role,
                             "id": user.id.decode()
                         }
-                        print(student_get_exam_info(retJSON=1) if user.role == 0 else None)
-                        return render_template(
-                            "dashboard.html",
-                            user = user_data,
-                            exam = student_get_exam_info(retJSON=1) if user.role == 0 else None
-                        )
+                        if user.role == 0:
+                            exam = student_get_exam_info(retJSON=1)
+                            scores = [item for item in query_scores_info_all(999, key="exam_id", content=exam.get("metadata", {}).get("id")) if item.id.decode() != ""]
+                            for score in scores:
+                                if score.user_id == user.id:
+                                    exam["done"] = True
+                                    break
+                                exam["done"] = False
+                            score = student_get_score_list(retJSON=1)
+                            return render_template(
+                                "dashboard.html",
+                                user = user_data,
+                                exam = exam,
+                                score = score
+                            )
                     else:
                         # 当前查询的用户不存在，认为JWT_KEY遭到泄露，强制弹回登录页面
                         response = make_response(render_template("dashboard.html"))
