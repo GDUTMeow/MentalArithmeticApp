@@ -125,6 +125,7 @@ def render_dashboard():
                             "role": user.role,
                             "id": user.id.decode()
                         }
+                        print(user_data)
                         if user.role == 0:
                             exam = student_get_exam_info(retJSON=1)
                             scores = [item for item in query_scores_info_all(999, key="exam_id", content=exam.get("metadata", {}).get("id")) if item.id.decode() != ""]
@@ -140,15 +141,24 @@ def render_dashboard():
                                 exam = exam,
                                 score = score
                             )
+                        else:
+                            exam = {"metadata": {}}
+                            score = []
+                            return render_template(
+                                "dashboard.html",
+                                user = user_data,
+                                exam = exam,
+                                score = score
+                            )
                     else:
                         # 当前查询的用户不存在，认为JWT_KEY遭到泄露，强制弹回登录页面
-                        response = make_response(render_template("dashboard.html"))
+                        response = make_response(render_template("login.html"))
                         response.delete_cookie("token")
                         return response
                 else:
-                    return render_template("dashboard.html")
+                    return render_template("login.html")
             else:
-                return render_template("dashboard.html")
+                return render_template("login.html")
         except jwt.InvalidTokenError:
             pass
     return redirect("/login")
