@@ -254,7 +254,7 @@
         displayElement.classList.add("fade-in"); // 添加淡入动画
     }
 
-    let xslxFile = null; // 存储上传的 XLSX 文件
+    let xlsxFile = null; // 存储上传的 XLSX 文件
 
     /**
      * 触发文件选择对话框以导入 XLSX 文件
@@ -332,31 +332,31 @@
 
         formData.append("examData", encodeURIComponent(JSON.stringify(examData)));
 
-            // 发送 POST 请求到服务器 API
-            fetch("/api/v1/teacher/addExam", {
-                    method: "POST",
-                    body: formData,
-                })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error(`服务器返回错误状态: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    console.log("服务器响应数据:", data);
-                    if (data.success) {
-                        alert("考试信息添加成功！");
-                    } else {
-                        // 显示错误消息
-                        alert(`添加考试失败！${data.msg}`);
-                    }
-                })
-                .catch((error) => {
-                    console.error("请求错误:", error);
-                    alert("提交失败，请检查控制台获取更多信息。");
-                });
-        }
+        // 发送 POST 请求到服务器 API
+        fetch("/api/v1/teacher/addExam", {
+            method: "POST",
+            body: formData,
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`服务器返回错误状态: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then((data) => {
+                console.log("服务器响应数据:", data);
+                if (data.success) {
+                    alert("考试信息添加成功！");
+                } else {
+                    // 显示错误消息
+                    alert(`添加考试失败！${data.msg}`);
+                }
+            })
+            .catch((error) => {
+                console.error("请求错误:", error);
+                alert("提交失败，请检查控制台获取更多信息。");
+            });
+    }
 
     /**
      * 将指定表格中的起始时间和终止时间转换为 'YYYY-MM-DD HH-mm-SS' 格式。
@@ -556,11 +556,10 @@
             .then((response) => response.json())
             .then((data) => {
                 if (data.success) {
-                    const exam = data.exam;
+                    const exam = data.data;
                     // 填充修改表单
                     document.getElementById("modify-exam-id").value = exam.id;
                     document.getElementById("modify-exam-name").value = exam.name;
-                    // 假设服务器返回的时间是ISO格式字符串
                     const startDate = new Date(exam.start_time * 1000);
                     const endDate = new Date(exam.end_time * 1000);
                     document.getElementById("modify-exam-start-date").value = startDate
@@ -654,7 +653,7 @@
         }
 
         // 发送 POST 请求到服务器 API
-        fetch("/api/v1/teacher/modifyexam", {
+        fetch("/api/v1/teacher/modifyExam", {
             method: "POST",
             body: formData,
         })
@@ -662,10 +661,8 @@
             .then((data) => {
                 if (data.success) {
                     alert("修改成功。");
-                    // 重新加载考试表格或更新对应的行
-                    location.reload(); // 简单刷新页面
                 } else {
-                    alert("修改失败：" + data.message);
+                    alert("修改失败：" + data.msg);
                 }
             })
             .catch((error) => {

@@ -19,7 +19,7 @@ from route.api import (
     student_api_v1,
     student_get_exam_info,
     student_get_score_list,
-    teacher_get_all_exams
+    teacher_get_all_exams,
 )
 from utils.database import query_user_info, query_score_info, query_scores_info_all
 from utils.tools import questions_xlsx_parse
@@ -31,8 +31,8 @@ app.register_blueprint(student_api_v1)
 app.register_blueprint(teacher_api_v1)
 
 app.template_folder = "templates"
-UPLOAD_FOLDER = 'uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+UPLOAD_FOLDER = "uploads"
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 # 确保上传目录存在
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -142,7 +142,6 @@ def render_dashboard():
                             "role": user.role,
                             "id": user.id.decode(),
                         }
-                        print(user_data)
                         if user.role == 0:
                             exam = student_get_exam_info(retJSON=1)
                             scores = [
@@ -180,7 +179,11 @@ def render_dashboard():
                             }
                             exams = teacher_get_all_exams(retJSON=1)
                             return render_template(
-                                "dashboard.html", user=user_data, exam=exam, score=score, exams=exams
+                                "dashboard.html",
+                                user=user_data,
+                                exam=exam,
+                                score=score,
+                                exams=exams,
                             )
                     else:
                         # 当前查询的用户不存在，认为JWT_KEY遭到泄露，强制弹回登录页面

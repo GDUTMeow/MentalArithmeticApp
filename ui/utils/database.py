@@ -124,7 +124,12 @@ def query_exams_info_all(
     exams_to_return = (SqlResponseExam * length)()
 
     # 调用C函数，查询所有考试信息
-    result = DATABASE_LIB.query_exams_info_all(ctypes.byref(exams_to_return[0]), length, c_char_p(key.encode()), c_char_p(content.encode()))
+    result = DATABASE_LIB.query_exams_info_all(
+        ctypes.byref(exams_to_return[0]),
+        length,
+        c_char_p(key.encode()),
+        c_char_p(content.encode()),
+    )
 
     if result == 0:
         # 查询成功，返回所有考试信息
@@ -182,7 +187,10 @@ def query_questions_info_all(
 
     # 调用C函数，查询所有问题信息
     result = DATABASE_LIB.query_questions_info_all(
-        ctypes.byref(questions_to_return[0]), length, c_char_p(key.encode()), c_char_p(str(content).encode())
+        ctypes.byref(questions_to_return[0]),
+        length,
+        c_char_p(key.encode()),
+        c_char_p(str(content).encode()),
     )
 
     if result == 0:
@@ -210,7 +218,10 @@ def query_scores_info_all(
 
     # 调用C函数，查询所有成绩信息
     result = DATABASE_LIB.query_scores_info_all(
-        ctypes.byref(scores_to_return[0]), length, c_char_p(key.encode()), c_char_p(content.encode())
+        ctypes.byref(scores_to_return[0]),
+        length,
+        c_char_p(key.encode()),
+        c_char_p(content.encode()),
     )
 
     if result == 0:

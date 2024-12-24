@@ -225,20 +225,23 @@ class SqlResponseUser(ctypes.Structure):
 class QuestionData(ctypes.Structure):
     _fields_ = [
         ("num1", c_int),  # int
-        ("op", c_int),    # int
+        ("op", c_int),  # int
         ("num2", c_int),  # int
     ]
 
     def __repr__(self):
         return f"QuestionData(num1={self.num1}, op={self.op}, num2={self.num2})"
 
+
 class Question(ctypes.Structure):
     pass  # self-referential
+
 
 Question._fields_ = [
     ("data", QuestionData),
     ("next_question", POINTER(Question)),
 ]
+
 
 def question_repr_with_cycle_detection(self):
     questions = []
@@ -254,6 +257,7 @@ def question_repr_with_cycle_detection(self):
     if current:
         questions.append("... (cycle detected)")
     return " -> ".join(questions)
+
 
 Question.__repr__ = question_repr_with_cycle_detection
 

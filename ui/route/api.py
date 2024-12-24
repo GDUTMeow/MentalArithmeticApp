@@ -12,14 +12,21 @@ from utils.database import (
     query_scores_info_all,
     insert_question_data,
     insert_exam_data,
-    delete_exam_data
+    delete_exam_data,
+    edit_exam_data,
+    delete_question_data,
 )
 from utils.app import (
     generate_question_list,
     randomize_question_list,
     traverse_question_list,
 )
-from utils.tools import generate_salt, calculate_score, questions_xlsx_parse, students_xlsx_parser
+from utils.tools import (
+    generate_salt,
+    calculate_score,
+    questions_xlsx_parse,
+    students_xlsx_parser,
+)
 from hashlib import sha512
 from datetime import datetime
 import jwt
@@ -378,13 +385,17 @@ def student_exam_submit():
 
 @student_api_v1.route("/api/v1/student/getScoreList")
 def student_get_score_list(retJSON: int = 0):
-    scores = [item for item in query_scores_info_all(
-        999,
-        key="user_id",
-        content=jwt.decode(
-            request.cookies.get("token"), JWT_KEY, algorithms=["HS256"]
-        ).get("id"),
-    ) if item.id.decode() != ""]
+    scores = [
+        item
+        for item in query_scores_info_all(
+            999,
+            key="user_id",
+            content=jwt.decode(
+                request.cookies.get("token"), JWT_KEY, algorithms=["HS256"]
+            ).get("id"),
+        )
+        if item.id.decode() != ""
+    ]
     exam_list = []
     for score in scores:
         exam_data = query_exam_info(key="id", content=score.exam_id.decode())
@@ -398,7 +409,7 @@ def student_get_score_list(retJSON: int = 0):
                     "expired": score.expired_flag,
                 }
             )
-    if not exam_list:   # 没有任何成绩
+    if not exam_list:  # 没有任何成绩
         body = {
             "success": True,
             "msg": "成绩获取成功",
@@ -432,7 +443,16 @@ def teacher_get_all_exams(retJSON=0):
                     "end_time": exam.end_time,
                     "allow_answer_when_expired": exam.allow_answer_when_expired,
                     "random_question": exam.random_question,
-                    "current_status": 0 if time.time() < exam.start_time else (1 if time.time() > exam.start_time and time.time() < exam.end_time else -1),
+                    "current_status": (
+                        0
+                        if time.time() < exam.start_time
+                        else (
+                            1
+                            if time.time() > exam.start_time
+                            and time.time() < exam.end_time
+                            else -1
+                        )
+                    ),
                 }
                 for exam in exams
             ],
@@ -445,25 +465,31 @@ def teacher_get_all_exams(retJSON=0):
         }
     return body if retJSON else jsonify(body)
 
+
 @teacher_api_v1.route("/api/v1/teacher/addExam", methods=["POST"])
 def teacher_add_exam() -> Response:
-    exam_data = request.form['examData']
+    exam_data = request.form["examData"]
     exam_data = unquote_to_bytes(exam_data)
     exam_data = json.loads(exam_data)
-    file = request.files['xlsxFile']
+    file = request.files["xlsxFile"]
     if file == None:
-        body = {
-            "success": False,
-            "msg": "未上传文件！"
-        }
+        body = {"success": False, "msg": "未上传文件！"}
         return body
     try:
         exam_uuid = str(uuid.uuid4())
         if insert_exam_data(
             exam_id=exam_uuid,
             name=exam_data.get("examName"),
-            start_time=int(datetime.strptime(exam_data.get("startDate"), "%Y-%m-%d %H:%M").replace(second=0).timestamp()),
-            end_time=int(datetime.strptime(exam_data.get("endDate"), "%Y-%m-%d %H:%M").replace(second=0).timestamp()),
+            start_time=int(
+                datetime.strptime(exam_data.get("startDate"), "%Y-%m-%d %H:%M")
+                .replace(second=0)
+                .timestamp()
+            ),
+            end_time=int(
+                datetime.strptime(exam_data.get("endDate"), "%Y-%m-%d %H:%M")
+                .replace(second=0)
+                .timestamp()
+            ),
             allow_answer_when_expired=int(exam_data.get("allowAnswerWhenExpired")),
             random_question=int(exam_data.get("randomQuestions")),
         ):
@@ -477,21 +503,31 @@ def teacher_add_exam() -> Response:
                     op=question[1],
                     num2=question[2],
                 )
-            body= {
-                "success": True,
-                "msg": "添加考试成功！"
-            }
+            body = {"success": True, "msg": "添加考试成功！"}
     except Exception as e:
-        body = {
-            "success": False,
-            "msg": f"添加考试失败！{e}"
-        }
+        body = {"success": False, "msg": f"添加考试失败！{e}"}
     return jsonify(body)
 
 
-@teacher_api_v1.route("/api/v1/teacher/getExam/<UUID>")
-def teracher_get_exam(UUID: str):
-    pass
+@teacher_api_v1.route("/api/v1/teacher/getExam/<uuid:UUID>")
+def teacher_get_exam(UUID: str) -> Response:
+    exam = query_exam_info(key="id", content=str(UUID))
+    if exam:
+        body = {
+            "success": True,
+            "msg": "获取考试信息成功",
+            "data": {
+                "id": exam.id.decode(),
+                "name": exam.name.decode(),
+                "start_time": exam.start_time,
+                "end_time": exam.end_time,
+                "allow_answer_when_expired": exam.allow_answer_when_expired,
+                "random_question": exam.allow_answer_when_expired,
+            },
+        }
+    else:
+        body = {"success": False, "msg": f"未找到ID为 {UUID} 的考试！", "data": {}}
+    return body
 
 
 @teacher_api_v1.route("/api/v1/teacher/deleteExams", methods=["POST"])
@@ -500,17 +536,102 @@ def teacher_delete_exam() -> Response:
     try:
         for exam in exams_to_delete:
             delete_exam_data(exam)
-        body = {
-            "success": True,
-            "msg": "删除考试成功！"
-        }
+        body = {"success": True, "msg": "删除考试成功！"}
         return jsonify(body)
     except Exception as e:
-        body = {
-            "success": False,
-            "msg": f"删除考试失败！{e}"
-        }
+        body = {"success": False, "msg": f"删除考试失败！{e}"}
         return jsonify(body)
+
+
+@teacher_api_v1.route("/api/v1/teacher/modifyExam", methods=["POST"])
+def teacher_modify_exam() -> Response:
+    data = request.form
+    exam_id = data.get("examId")
+    current_exam = query_exam_info(key="id", content=exam_id)
+    if current_exam:
+        all_exams = query_exams_info_all(999)
+        for exam in all_exams:
+            if (
+                exam.start_time
+                <= current_exam.start_time  # 有一门考试的开始时间在本次修改的考试之前且结束时间在本次修改的考试之后，即出现重合时间段使得两场考试同时进行
+                and current_exam.end_time <= exam.end_time
+                and exam.id.decode() != exam_id
+            ):
+                body = {
+                    "success": False,
+                    "msg": f"无法进行修改！修改后的考试时间段与其他考试（{exam.name.decode()}）时间段重合！",
+                }
+                return jsonify(body)
+        try:
+            if edit_exam_data(
+                exam_id,
+                data.get("examName"),
+                int(
+                    datetime.strptime(data.get("startDate"), "%Y-%m-%d %H:%M")
+                    .replace(second=0)
+                    .timestamp()
+                ),
+                int(
+                    datetime.strptime(data.get("endDate"), "%Y-%m-%d %H:%M")
+                    .replace(second=0)
+                    .timestamp()
+                ),
+                int(data.get("allowAnswerWhenExpired")),
+                int(data.get("randomQuestions")),
+            ):
+                body = {"success": True, "msg": "修改考试信息成功！"}
+
+                if "xlsxFile" in request.files:
+                    file = request.files["xlsxFile"]
+                    try:
+                        new_questions = questions_xlsx_parse(file.read())
+                        old_questions = [
+                            item
+                            for item in query_questions_info_all(
+                                999, key="exam_id", content=exam_id
+                            )
+                            if item.id.decode() != ""
+                        ]
+                        for question in old_questions:
+                            try:
+                                if not delete_question_data(question.id.decode()):
+                                    raise Exception(question.id.decode())
+                            except Exception as e:
+                                body = {
+                                    "success": False,
+                                    "msg": (
+                                        f"修改考试信息成功，但是有题目删除出错了！{e}"
+                                        if "但是有题目删除出错了" not in body.get("msg")
+                                        else body.get("msg")
+                                        + f" {question.id.decode()}"
+                                    ),
+                                }
+                                continue
+                        for question in new_questions:
+                            question_uuid = str(uuid.uuid4())
+                            insert_question_data(
+                                question_id=question_uuid,
+                                exam_id=exam_id,
+                                num1=question[0],
+                                op=question[1],
+                                num2=question[2],
+                            )
+                        body = {
+                            "success": True,
+                            "msg": body.get("msg") + "题目添加成功！",
+                        }
+                    except Exception as e:
+                        body = {
+                            "success": False,
+                            "msg": f"修改考试信息成功，但是题目添加失败！{e}",
+                        }
+            else:
+                body = {"success": False, "msg": "修改考试信息失败！"}
+        except Exception as e:
+            body = {"success": False, "msg": f"修改考试信息失败！{e}"}
+    else:
+        body = {"success": False, "msg": f"未找到ID为 {exam_id} 的考试！"}
+    return jsonify(body)
 
 
 @teacher_api_v1.route("/api/v1/teacher/getExamScores/<UUID>")
