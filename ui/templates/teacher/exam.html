@@ -45,7 +45,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set exams = exams|default({"exam_list": [{"id": "UUID4", "name": "测试考试", "current_status": -1, "start_time": 1704628540, "end_time": "1704635143", "allow_answer_when_expired": 1, "random_question": 0}]}) %} {% for item in exams.exam_list %}
+                        {% set exams = exams|default({"data": [{"id": "UUID4", "name": "测试考试", "current_status": -1, "start_time": 1704628540, "end_time": "1704635143", "allow_answer_when_expired": 1, "random_question": 0}]}) %} {% for item in exams.data %}
                         <tr>
                             <td>
                                 <input type="checkbox" class="exam-select" value="{{ item.id }}" />
@@ -92,33 +92,33 @@
                         </p>
                         <!-- 考试名称 -->
                         <div class="form-floating mb-3">
-                            <input type="text" id="exam-name" class="form-control" placeholder="考试名称" />
+                            <input type="text" id="exam-add-name" class="form-control" placeholder="考试名称" />
                             <label for="exam-name">考试名称</label>
                         </div>
                         <!-- 考试起始日期和时间 -->
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <div class="form-floating">
-                                    <input type="date" id="exam-start-date" class="form-control" placeholder="考试起始日期" />
+                                    <input type="date" id="exam-add-start-date" class="form-control" placeholder="考试起始日期" />
                                     <label for="exam-start-date">考试起始日期</label>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <div class="form-floating">
-                                    <input type="time" id="exam-start-time" class="form-control" placeholder="考试起始时间" />
+                                    <input type="time" id="exam-add-start-time" class="form-control" placeholder="考试起始时间" />
                                     <label for="exam-start-time">考试起始时间</label>
                                 </div>
                             </div>
                             <!-- 考试结束日期和时间 -->
                             <div class="col-md-3 mb-3">
                                 <div class="form-floating">
-                                    <input type="date" id="exam-end-date" class="form-control" placeholder="考试结束日期" />
+                                    <input type="date" id="exam-add-end-date" class="form-control" placeholder="考试结束日期" />
                                     <label for="exam-end-date">考试结束日期</label>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <div class="form-floating">
-                                    <input type="time" id="exam-end-time" class="form-control" placeholder="考试结束时间" />
+                                    <input type="time" id="exam-add-end-time" class="form-control" placeholder="考试结束时间" />
                                     <label for="exam-end-time">考试结束时间</label>
                                 </div>
                             </div>
@@ -127,7 +127,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <div class="form-floating">
-                                    <select id="allow-answer-when-expired" class="form-select" aria-label="允许逾期作答">
+                                    <select id="exam-add-allow-answer-when-expired" class="form-select" aria-label="允许逾期作答">
                                         <option value="" selected>--- 请选择 ---</option>
                                         <option value="1">允许</option>
                                         <option value="0">不允许</option>
@@ -137,7 +137,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <div class="form-floating">
-                                    <select id="random-questions" class="form-select" aria-label="随机问题顺序">
+                                    <select id="exam-add-random-questions" class="form-select" aria-label="随机问题顺序">
                                         <option value="" selected>--- 请选择 ---</option>
                                         <option value="1">是</option>
                                         <option value="0">否</option>
@@ -148,12 +148,19 @@
                         </div>
                         <!-- 导入题目文件 -->
                         <div class="col-12 mb-3">
-                            <span id="csv-file-name">请选择要导入的题目文件（csv格式）</span>
+                            <span id="xlsx-file-name">请选择要导入的题目文件（csv格式）</span>
                             <br />
                             <div class="row mt-2">
                                 <div class="col-md-6 mb-3">
-                                    <input type="file" id="csv-file" style="display: none" accept=".csv" />
-                                    <button type="button" class="btn btn-primary btn-rounded btn-lg w-100" data-mdb-ripple-color="#ffffff" id="exam-add-import-questions" onclick="importCsvFile()">
+                                    <button type="button" class="btn btn-info btn-rounded btn-lg w-100" data-mdb-ripple-color="#ffffff" id="exam-download-template" onclick="">
+                                        下载题目模板
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-6 mb-3">
+                                    <input type="file" id="xlsx-file" style="display: none" accept=".xlsx" />
+                                    <button type="button" class="btn btn-primary btn-rounded btn-lg w-100" data-mdb-ripple-color="#ffffff" id="exam-add-import-questions" onclick="importXlsxFile()">
                                         导入题目
                                     </button>
                                 </div>
@@ -249,12 +256,12 @@
                         </div>
                         <!-- 导入题目文件 -->
                         <div class="col-12 mb-3">
-                            <span id="modify-csv-file-name">请选择要导入的题目文件（csv格式）</span>
+                            <span id="modify-xlsx-file-name">请选择要导入的题目文件（csv格式）</span>
                             <br />
                             <div class="row mt-2">
                                 <div class="col-md-6 mb-3">
-                                    <input type="file" id="modify-csv-file" style="display: none" accept=".csv" />
-                                    <button type="button" class="btn btn-danger btn-rounded btn-lg w-100" data-mdb-ripple-color="#ffffff" id="modify-exam-import-questions" onclick="importModifyCsvFile()">
+                                    <input type="file" id="modify-xlsx-file" style="display: none" accept=".csv" />
+                                    <button type="button" class="btn btn-danger btn-rounded btn-lg w-100" data-mdb-ripple-color="#ffffff" id="modify-exam-import-questions" onclick="importModifyXlsxFile()">
                                         导入题目
                                     </button>
                                 </div>

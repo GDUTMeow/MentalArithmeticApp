@@ -10,19 +10,25 @@ from utils.database import (
     query_questions_info_all,
     insert_score_data,
     query_scores_info_all,
+    insert_question_data,
+    insert_exam_data,
+    delete_exam_data
 )
 from utils.app import (
     generate_question_list,
     randomize_question_list,
     traverse_question_list,
 )
-from utils.tools import generate_salt, calculate_score
+from utils.tools import generate_salt, calculate_score, questions_xlsx_parse, students_xlsx_parser
 from hashlib import sha512
+from datetime import datetime
 import jwt
 import random
 import uuid
 import string
 import time
+import json
+from urllib.parse import unquote_to_bytes
 
 JWT_KEY = "GamerNoTitle"
 
@@ -411,9 +417,76 @@ def student_get_score_list(retJSON: int = 0):
     return body if retJSON else jsonify(body)
 
 
+@teacher_api_v1.route("/api/v1/teacher/getAllExams")
+def teacher_get_all_exams(retJSON=0):
+    exams = query_exams_info_all(999)
+    if exams:
+        body = {
+            "success": True,
+            "msg": "获取考试列表成功",
+            "data": [
+                {
+                    "id": exam.id.decode(),
+                    "name": exam.name.decode(),
+                    "start_time": exam.start_time,
+                    "end_time": exam.end_time,
+                    "allow_answer_when_expired": exam.allow_answer_when_expired,
+                    "random_question": exam.random_question,
+                    "current_status": 0 if time.time() < exam.start_time else (1 if time.time() > exam.start_time and time.time() < exam.end_time else -1),
+                }
+                for exam in exams
+            ],
+        }
+    else:
+        body = {
+            "success": False,
+            "msg": "获取考试列表失败",
+            "data": [],
+        }
+    return body if retJSON else jsonify(body)
+
 @teacher_api_v1.route("/api/v1/teacher/addExam", methods=["POST"])
-def teacher_add_exam():
-    pass
+def teacher_add_exam() -> Response:
+    exam_data = request.form['examData']
+    exam_data = unquote_to_bytes(exam_data)
+    exam_data = json.loads(exam_data)
+    file = request.files['xlsxFile']
+    if file == None:
+        body = {
+            "success": False,
+            "msg": "未上传文件！"
+        }
+        return body
+    try:
+        exam_uuid = str(uuid.uuid4())
+        if insert_exam_data(
+            exam_id=exam_uuid,
+            name=exam_data.get("examName"),
+            start_time=int(datetime.strptime(exam_data.get("startDate"), "%Y-%m-%d %H:%M").replace(second=0).timestamp()),
+            end_time=int(datetime.strptime(exam_data.get("endDate"), "%Y-%m-%d %H:%M").replace(second=0).timestamp()),
+            allow_answer_when_expired=int(exam_data.get("allowAnswerWhenExpired")),
+            random_question=int(exam_data.get("randomQuestions")),
+        ):
+            questions = questions_xlsx_parse(file.read())
+            for question in questions:
+                question_uuid = str(uuid.uuid4())
+                insert_question_data(
+                    question_id=question_uuid,
+                    exam_id=exam_uuid,
+                    num1=question[0],
+                    op=question[1],
+                    num2=question[2],
+                )
+            body= {
+                "success": True,
+                "msg": "添加考试成功！"
+            }
+    except Exception as e:
+        body = {
+            "success": False,
+            "msg": f"添加考试失败！{e}"
+        }
+    return jsonify(body)
 
 
 @teacher_api_v1.route("/api/v1/teacher/getExam/<UUID>")
@@ -422,8 +495,22 @@ def teracher_get_exam(UUID: str):
 
 
 @teacher_api_v1.route("/api/v1/teacher/deleteExams", methods=["POST"])
-def teacher_delete_exam():
-    pass
+def teacher_delete_exam() -> Response:
+    exams_to_delete = request.json.get("examIds")
+    try:
+        for exam in exams_to_delete:
+            delete_exam_data(exam)
+        body = {
+            "success": True,
+            "msg": "删除考试成功！"
+        }
+        return jsonify(body)
+    except Exception as e:
+        body = {
+            "success": False,
+            "msg": f"删除考试失败！{e}"
+        }
+        return jsonify(body)
 
 
 @teacher_api_v1.route("/api/v1/teacher/getExamScores/<UUID>")

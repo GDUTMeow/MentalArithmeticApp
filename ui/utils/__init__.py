@@ -330,9 +330,9 @@ DATABASE_LIB.insert_exam_data.argtypes = [
 DATABASE_LIB.insert_question_data.argtypes = [
     ctypes.c_char_p,  # question_id
     ctypes.c_char_p,  # exam_id
-    ctypes.c_float,  # num1
+    ctypes.c_int,  # num1
     ctypes.c_int,  # op
-    ctypes.c_float,  # num2
+    ctypes.c_int,  # num2
 ]
 
 

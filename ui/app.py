@@ -10,9 +10,19 @@ from flask import (
 )
 import json
 import jwt
+import os
 import datetime
-from route.api import general_api_v1, user_api_v1, teacher_api_v1, student_api_v1, student_get_exam_info, student_get_score_list
+from route.api import (
+    general_api_v1,
+    user_api_v1,
+    teacher_api_v1,
+    student_api_v1,
+    student_get_exam_info,
+    student_get_score_list,
+    teacher_get_all_exams
+)
 from utils.database import query_user_info, query_score_info, query_scores_info_all
+from utils.tools import questions_xlsx_parse
 
 app = Flask(__name__)
 app.register_blueprint(general_api_v1)
@@ -21,6 +31,11 @@ app.register_blueprint(student_api_v1)
 app.register_blueprint(teacher_api_v1)
 
 app.template_folder = "templates"
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+# 确保上传目录存在
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 cookie_blacklist = (
     []
@@ -121,14 +136,24 @@ def render_dashboard():
                             "name": user.name.decode(),
                             "username": user.username.decode(),
                             "number": user.number,
-                            "class_name": user.class_name.decode() if user.class_name else "",
+                            "class_name": (
+                                user.class_name.decode() if user.class_name else ""
+                            ),
                             "role": user.role,
-                            "id": user.id.decode()
+                            "id": user.id.decode(),
                         }
                         print(user_data)
                         if user.role == 0:
                             exam = student_get_exam_info(retJSON=1)
-                            scores = [item for item in query_scores_info_all(999, key="exam_id", content=exam.get("metadata", {}).get("id")) if item.id.decode() != ""]
+                            scores = [
+                                item
+                                for item in query_scores_info_all(
+                                    999,
+                                    key="exam_id",
+                                    content=exam.get("metadata", {}).get("id"),
+                                )
+                                if item.id.decode() != ""
+                            ]
                             for score in scores:
                                 if score.user_id == user.id:
                                     exam["done"] = True
@@ -136,19 +161,26 @@ def render_dashboard():
                                 exam["done"] = False
                             score = student_get_score_list(retJSON=1)
                             return render_template(
-                                "dashboard.html",
-                                user = user_data,
-                                exam = exam,
-                                score = score
+                                "dashboard.html", user=user_data, exam=exam, score=score
                             )
                         else:
-                            exam = {"metadata": {}}
-                            score = []
+                            exam = {"metadata": {"allow_answer_when_expired": False}}
+                            score = {
+                                "success": True,
+                                "msg": "成绩获取成功",
+                                "data": [
+                                    {
+                                        "id": "score_id",
+                                        "exam_id": "exam_id",
+                                        "exam_name": "exam_name",
+                                        "score": -1,
+                                        "expired": False,
+                                    }
+                                ],
+                            }
+                            exams = teacher_get_all_exams(retJSON=1)
                             return render_template(
-                                "dashboard.html",
-                                user = user_data,
-                                exam = exam,
-                                score = score
+                                "dashboard.html", user=user_data, exam=exam, score=score, exams=exams
                             )
                     else:
                         # 当前查询的用户不存在，认为JWT_KEY遭到泄露，强制弹回登录页面
@@ -177,6 +209,7 @@ def logout_handler():
         "token", jwt.encode({"role": -1}, key, algorithm="HS256"), max_age=0
     )
     return response
+
 
 if __name__ == "__main__":
     print("Student token:", jwt.encode({"role": 0}, key, algorithm="HS256"))

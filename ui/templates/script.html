@@ -1,10 +1,10 @@
 <script>
     // 获取表单输入元素
-    const examNameInput = document.getElementById("exam-name");
-    const examStartDateInput = document.getElementById("exam-start-date");
-    const examStartTimeInput = document.getElementById("exam-start-time");
-    const examEndDateInput = document.getElementById("exam-end-date");
-    const examEndTimeInput = document.getElementById("exam-end-time");
+    const examNameInput = document.getElementById("exam-add-name");
+    const examStartDateInput = document.getElementById("exam-add-start-date");
+    const examStartTimeInput = document.getElementById("exam-add-start-time");
+    const examEndDateInput = document.getElementById("exam-add-end-date");
+    const examEndTimeInput = document.getElementById("exam-add-end-time");
 
     // 获取对应的标签元素
     const examNameLabel = document.querySelector('label[for="exam-name"]');
@@ -254,45 +254,45 @@
         displayElement.classList.add("fade-in"); // 添加淡入动画
     }
 
-    let csvFile = null; // 存储上传的 CSV 文件
+    let xslxFile = null; // 存储上传的 XLSX 文件
 
     /**
-     * 触发文件选择对话框以导入 CSV 文件
+     * 触发文件选择对话框以导入 XLSX 文件
      */
-    function importCsvFile() {
-        document.getElementById("csv-file").click();
+    function importXlsxFile() {
+        document.getElementById("xlsx-file").click();
     }
 
-    // 监听 CSV 文件输入变化事件
-    document.getElementById("csv-file").addEventListener("change", function() {
-        csvFile = this.files[0];
+    // 监听 XLSX 文件输入变化事件
+    document.getElementById("xlsx-file").addEventListener("change", function () {
+        xlsxFile = this.files[0];
         document.getElementById(
-            "csv-file-name"
-        ).innerText = `当前选择的文件：${csvFile.name}`;
+            "xlsx-file-name"
+        ).innerText = `当前选择的文件：${xlsxFile.name}`;
         toggleExamAddConfirmButton();
     });
 
     // 为各个表单字段添加输入事件监听器，以控制确认按钮的启用状态
     document
-        .getElementById("exam-name")
+        .getElementById("exam-add-name")
         .addEventListener("input", toggleExamAddConfirmButton);
     document
-        .getElementById("exam-start-date")
+        .getElementById("exam-add-start-date")
         .addEventListener("input", toggleExamAddConfirmButton);
     document
-        .getElementById("exam-start-time")
+        .getElementById("exam-add-start-time")
         .addEventListener("input", toggleExamAddConfirmButton);
     document
-        .getElementById("exam-end-date")
+        .getElementById("exam-add-end-date")
         .addEventListener("input", toggleExamAddConfirmButton);
     document
-        .getElementById("exam-end-time")
+        .getElementById("exam-add-end-time")
         .addEventListener("input", toggleExamAddConfirmButton);
     document
-        .getElementById("allow-answer-when-expired")
+        .getElementById("exam-add-allow-answer-when-expired")
         .addEventListener("change", toggleExamAddConfirmButton);
     document
-        .getElementById("random-questions")
+        .getElementById("exam-add-random-questions")
         .addEventListener("change", toggleExamAddConfirmButton);
 
     /**
@@ -300,14 +300,14 @@
      */
     function toggleExamAddConfirmButton() {
         if (
-            csvFile &&
-            document.getElementById("exam-name").value &&
-            document.getElementById("exam-start-date").value &&
-            document.getElementById("exam-start-time").value &&
-            document.getElementById("exam-end-date").value &&
-            document.getElementById("exam-end-time").value &&
-            document.getElementById("allow-answer-when-expired").value &&
-            document.getElementById("random-questions").value
+            xlsxFile &&
+            document.getElementById("exam-add-name").value &&
+            document.getElementById("exam-add-start-date").value &&
+            document.getElementById("exam-add-start-time").value &&
+            document.getElementById("exam-add-end-date").value &&
+            document.getElementById("exam-add-end-time").value &&
+            document.getElementById("exam-add-allow-answer-when-expired").value &&
+            document.getElementById("exam-add-random-questions").value
         ) {
             document.getElementById("exam-add-confirm").disabled = false; // 启用确认按钮
         } else {
@@ -320,38 +320,43 @@
      */
     function addExam() {
         let formData = new FormData();
-        formData.append("examName", document.getElementById("exam-name").value);
-        formData.append(
-            "startDate",
-            document.getElementById("exam-start-date").value +
-            " " +
-            document.getElementById("exam-start-time").value
-        );
-        formData.append(
-            "endDate",
-            document.getElementById("exam-end-date").value +
-            " " +
-            document.getElementById("exam-end-time").value
-        );
-        formData.append(
-            "allowAnswerWhenExpired",
-            document.getElementById("allow-answer-when-expired").value
-        );
-        formData.append(
-            "randomQuestions",
-            document.getElementById("random-questions").value
-        );
-        formData.append("csvFile", csvFile);
+        formData.append("xlsxFile", xlsxFile);
 
-        // 发送 POST 请求到服务器 API
-        fetch("/api/v1/teacher/addExam", {
-                method: "POST",
-                body: formData,
-            })
-            .then((response) => response.json()) // 解析响应为 JSON
-            .then((data) => console.log(data)) // 在控制台输出返回的数据
-            .catch((error) => console.error(error)); // 捕获并在控制台输出错误
-    }
+        let examData = {
+            examName: document.getElementById("exam-add-name").value,
+            startDate: document.getElementById("exam-add-start-date").value + " " + document.getElementById("exam-add-start-time").value,
+            endDate: document.getElementById("exam-add-end-date").value + " " + document.getElementById("exam-add-end-time").value,
+            allowAnswerWhenExpired: document.getElementById("exam-add-allow-answer-when-expired").value,
+            randomQuestions: document.getElementById("exam-add-random-questions").value
+        };
+
+        formData.append("examData", encodeURIComponent(JSON.stringify(examData)));
+
+            // 发送 POST 请求到服务器 API
+            fetch("/api/v1/teacher/addExam", {
+                    method: "POST",
+                    body: formData,
+                })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error(`服务器返回错误状态: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    console.log("服务器响应数据:", data);
+                    if (data.success) {
+                        alert("考试信息添加成功！");
+                    } else {
+                        // 显示错误消息
+                        alert(`添加考试失败！${data.msg}`);
+                    }
+                })
+                .catch((error) => {
+                    console.error("请求错误:", error);
+                    alert("提交失败，请检查控制台获取更多信息。");
+                });
+        }
 
     /**
      * 将指定表格中的起始时间和终止时间转换为 'YYYY-MM-DD HH-mm-SS' 格式。
@@ -508,14 +513,14 @@
 
         // 发送删除请求到服务器
         fetch("/api/v1/teacher/deleteExams", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    examIds: examIds,
-                }),
-            })
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                examIds: examIds,
+            }),
+        })
             .then((response) => response.json())
             .then((data) => {
                 console.log(data);
@@ -601,8 +606,8 @@
     /**
      * 导入修改考试的CSV文件
      */
-    function importModifyCsvFile() {
-        document.getElementById("modify-csv-file").click();
+    function importModifyXlsxFile() {
+        document.getElementById("modify-xlsx-file").click();
     }
 
     /**
@@ -621,9 +626,10 @@
         const randomQuestions = document.getElementById(
             "modify-random-questions"
         ).value;
-        const csvFile = document.getElementById("modify-csv-file").files[0];
+        const xlsxFile = document.getElementById("modify-xlsx-file").files[0];
 
-        if (!examId ||
+        if (
+            !examId ||
             !examName ||
             !startDate ||
             !startTime ||
@@ -643,15 +649,15 @@
         formData.append("endDate", `${endDate} ${endTime}`);
         formData.append("allowAnswerWhenExpired", allowAnswerWhenExpired);
         formData.append("randomQuestions", randomQuestions);
-        if (csvFile) {
-            formData.append("csvFile", csvFile);
+        if (xlsxFile) {
+            formData.append("xlsxFile", xlsxFile);
         }
 
         // 发送 POST 请求到服务器 API
         fetch("/api/v1/teacher/modifyexam", {
-                method: "POST",
-                body: formData,
-            })
+            method: "POST",
+            body: formData,
+        })
             .then((response) => response.json()) // 解析响应为 JSON
             .then((data) => {
                 if (data.success) {
@@ -674,11 +680,11 @@
     const studentNumberInput = document.getElementById("student-number");
 
     // 获取学生添加相关元素
-    const studentCsvFileInput = document.getElementById("student-csv-file");
+    const studentXlsxFileInput = document.getElementById("student-xlsx-file");
     const studentAddConfirmButton = document.getElementById(
         "student-add-confirm"
     );
-    let studentCsvFile = null;
+    let studentXlsxFile = null;
 
     // 全局变量
     const modifyStudentNameInput = document.getElementById("modify-student-name");
@@ -705,11 +711,11 @@
         toggleStudentAddConfirmButton
     );
     studentNumberInput.addEventListener("input", toggleStudentAddConfirmButton);
-    studentCsvFileInput.addEventListener("change", function() {
-        studentCsvFile = this.files[0];
+    studentXlsxFileInput.addEventListener("change", function () {
+        studentXlsxFile = this.files[0];
         document.getElementById(
-            "student-csv-file-name"
-        ).innerText = `当前选择的文件：${studentCsvFile.name}`;
+            "student-xlsx-file-name"
+        ).innerText = `当前选择的文件：${studentXlsxFile.name}`;
         toggleStudentAddConfirmButton();
     });
 
@@ -718,7 +724,7 @@
      */
     function toggleStudentAddConfirmButton() {
         if (
-            studentCsvFile ||
+            studentXlsxFile ||
             (studentNameInput.value.trim() !== "" &&
                 studentClassNameInput.value.trim() !== "" &&
                 studentNumberInput.value.trim() !== "")
@@ -732,8 +738,8 @@
     /**
      * 触发文件选择对话框以导入学生CSV文件
      */
-    function importStudentCsvFile() {
-        studentCsvFileInput.click();
+    function importStudentXlsxFile() {
+        studentXlsxFileInput.click();
     }
 
     /**
@@ -744,13 +750,13 @@
         formData.append("studentName", studentNameInput.value);
         formData.append("className", studentClassNameInput.value);
         formData.append("number", studentNumberInput.value);
-        formData.append("csvFile", studentCsvFile);
+        formData.append("xlsxFile", studentXlsxFile);
 
         // 发送 POST 请求到服务器 API
         fetch("/api/v1/teacher/addStudents", {
-                method: "POST",
-                body: formData,
-            })
+            method: "POST",
+            body: formData,
+        })
             .then((response) => response.json()) // 解析响应为 JSON
             .then((data) => {
                 if (data.success) {
@@ -799,14 +805,14 @@
 
         // 发送删除请求到服务器
         fetch("/api/v1/teacher/deleteStudents", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    studentIds: studentIds,
-                }),
-            })
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                studentIds: studentIds,
+            }),
+        })
             .then((response) => response.json())
             .then((data) => {
                 if (data.success) {
@@ -901,9 +907,9 @@
                     passwordFields.style.display = "none"; // 隐藏密码输入框
 
                     // 清除之前选择的文件
-                    modifyStudentCsvFile = null;
-                    document.getElementById("modify-student-csv-file-name").innerText =
-                        "请选择要导入的学生文件（csv格式）";
+                    modifyStudentXlsxFile = null;
+                    document.getElementById("modify-student-xlsx-file-name").innerText =
+                        "请选择要导入的学生文件（xlsx格式）";
                     modifyStudentConfirmButton.disabled = false; // 根据需求可以调整是否需要文件
 
                     // 清空密码字段
@@ -964,7 +970,7 @@
     }
 
     // 监听重置密码复选框变化事件
-    resetPasswordCheckbox.addEventListener("change", function() {
+    resetPasswordCheckbox.addEventListener("change", function () {
         if (this.checked) {
             passwordFields.style.display = "block"; // 显示密码输入框
         } else {
@@ -1005,9 +1011,10 @@
         const studentClassName = modifyStudentClassNameInput.value.trim();
         const studentNumber = modifyStudentNumberInput.value.trim();
         const resetPassword = resetPasswordCheckbox.checked;
-        const csvFile = modifyStudentCsvFile;
+        const xlsxFile = modifyStudentXlsxFile;
 
-        if (!studentId ||
+        if (
+            !studentId ||
             studentName === "" ||
             studentClassName === "" ||
             studentNumber === ""
@@ -1039,15 +1046,15 @@
             formData.append("newPassword", newPasswordInput.value.trim());
             // 视需求是否需要将确认密码发送到服务器
         }
-        if (csvFile) {
-            formData.append("csvFile", csvFile);
+        if (xlsxFile) {
+            formData.append("xlsxFile", xlsxFile);
         }
 
         // 发送 POST 请求到服务器 API
         fetch("/api/v1/teacher/modifyStudent", {
-                method: "POST",
-                body: formData,
-            })
+            method: "POST",
+            body: formData,
+        })
             .then((response) => response.json()) // 解析响应为 JSON
             .then((data) => {
                 if (data.success) {
@@ -1190,12 +1197,12 @@
 
     function logout() {
         fetch("/api/v1/user/logout", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-            })
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+        })
             .then((response) => {
                 if (!response.ok) {
                     // 尽管失败，但是还是清除cookie，并返回登录页面
@@ -1218,7 +1225,7 @@
     }
 
     // 当文档加载完成后，运行下面的函数
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         adjust_elements(); // 调整考试框的位置
         hide_nav_items(); // 隐藏不属于当前用户角色相关的顶栏链接
         convertTimestampsInExamTable(); // 转换时间戳为可阅读的格式
