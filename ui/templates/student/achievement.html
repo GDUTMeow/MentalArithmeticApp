@@ -36,13 +36,13 @@
                             </thead>
                             <tbody>
                                 {% set score = score|default({"data": [{"exam_name": "测试考试",
-                                "score": 114514, "expired_flag": 1}]}) %} {% for item in
+                                "score": 114514, "expired": 1}]}) %} {% for item in
                                 score.data %}
                                 <tr>
                                     <th scope="row">{{ loop.index }}</th>
                                     <td>{{ item.exam_name }}</td>
                                     <td>{{ item.score }}</td>
-                                    <td>{% if item.expired_flag %}是{% else %}否{% endif %}</td>
+                                    <td>{% if item.expired == 1 %}是{% else %}否{% endif %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>

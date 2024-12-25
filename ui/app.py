@@ -37,6 +37,7 @@ LOG_FILE = os.path.join(LOG_DIR, 'ui.log')
 EXEMPT_PATHS = [
     "/login",
     "/static/",
+    "/api/v1/general/"
 ]
 cookie_blacklist = []  # 初始化黑名单列表
 JWT_KEY = "GamerNoTitle"  # 请替换为你的实际密钥
@@ -232,12 +233,12 @@ def before_request_func():
         path = request.path.lower()
 
         # 角色与路径的权限控制
-        if "student" in path:
+        if "/student/" in path.lower():
             # 如果路径包含 'student'，要求角色为学生 (0)
             if role != 0:
                 logger.warning(f"Access denied for role {role} on path {path}.")
                 return "Permission Denied!", 403
-        elif "teacher" in path:
+        elif "/teacher/" in path.lower():
             # 如果路径包含 'teacher'，要求角色为教师 (1)
             if role != 1:
                 logger.warning(f"Access denied for role {role} on path {path}.")
@@ -492,4 +493,5 @@ if __name__ == "__main__":
     initialize_application()
 
     # 运行 Flask 应用，禁用重新加载器以防止日志重复
-    app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)
+    # app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)
+    app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=True)

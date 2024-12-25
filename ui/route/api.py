@@ -96,7 +96,7 @@ def general_login() -> Response:
     if body.get("success"):
         # 生成JWT，包含用户角色和ID
         cookie = jwt.encode(
-            {"role": user.role, "id": user.id.decode()}, JWT_KEY, algorithm="HS256"
+            {"role": user.role, "id": user.id.decode(), "token": generate_salt()}, JWT_KEY, algorithm="HS256"
         )
         cookie_age = 604800  # 设置cookie有效期为7天（7*24*60*60秒）
         response.set_cookie("token", cookie, max_age=cookie_age)
@@ -283,19 +283,23 @@ def student_get_exam_info(retJSON: int = 0) -> Response | dict:
         # 选择考试逻辑：
         # 优先选择当前正在进行的考试（当前时间在开始和结束时间之间）
         # 如果没有进行中的考试，则选择下一个即将开始的考试
+        # 如果没有下一个即将开始的考试，则返回最后一个过期的考试
         for exam in exams:
             if exam.start_time <= now < exam.end_time:
                 active_exam = exam
                 break  # 找到正在进行的考试后退出循环
             elif exam.start_time > now and next_exam is None:
                 next_exam = exam
-                # 不中断循环，继续检查是否有正在进行的考试
+            elif exam.end_time <= now:
+                last_past_exam = exam
 
         # 确定要返回的考试信息
         if active_exam:
             exam_to_return = active_exam
         elif next_exam:
             exam_to_return = next_exam
+        elif last_past_exam:
+            exam_to_return = last_past_exam
         else:
             exam_to_return = None
 
@@ -461,7 +465,11 @@ def student_exam_submit() -> Response:
         else:
             # 如果没有提供随机种子，直接使用原始问题列表
             question_list = [
-                item
+                {
+                    "num1": item.num1,
+                    "op": item.op,
+                    "num2": item.num2,
+                }
                 for item in query_questions_info_all(
                     999, key="exam_id", content=exam_id
                 )
@@ -597,50 +605,89 @@ def teacher_add_exam() -> Response:
     # 从表单数据中获取考试信息和上传的文件
     exam_data = request.form["examData"]
     exam_data = unquote_to_bytes(exam_data)  # 对URL编码的考试数据进行解码
-    exam_data = json.loads(exam_data)  # 将JSON字符串解析为字典
+    current_exam = json.loads(exam_data)  # 将JSON字符串解析为字典
+    if not all(
+        [
+            current_exam.get("examName"),
+            current_exam.get("startDate"),
+            current_exam.get("endDate"),
+            current_exam.get("allowAnswerWhenExpired"),
+            current_exam.get("randomQuestions"),
+        ]
+    ):
+        body = {
+            "success": False,
+            "msg": "当前要添加的考试信息有内容未填写，请检查所有窗格的填写情况！",
+        }
+    # 查询所有考试信息，限制返回数量为999条
+    all_exams = query_exams_info_all(999)
+    for exam in all_exams:
+        # 检查修改后的考试时间是否与其他考试时间重叠
+        if (
+            exam.start_time
+            <= int(
+                datetime.strptime(current_exam["startDate"], "%Y-%m-%d %H:%M")
+                .replace(second=0)
+                .timestamp()
+            )
+            and int(
+                datetime.strptime(current_exam["endDate"], "%Y-%m-%d %H:%M")
+                .replace(second=0)
+                .timestamp()
+            )
+            <= exam.end_time
+        ):
+            # 如果存在时间重叠，返回错误消息
+            body = {
+                "success": False,
+                "msg": f"无法进行添加，要添加的考试占用的考试时间段与其他考试（{exam.name.decode()}）时间段重合！",
+            }
+            return jsonify(body)
     file = request.files.get("xlsxFile")  # 获取上传的Excel文件
     if file is None:
         # 如果未上传文件，返回错误消息
         body = {"success": False, "msg": "未上传文件！"}
         return jsonify(body)
-    try:
-        # 生成新的考试UUID
-        exam_uuid = str(uuid.uuid4())
-        # 插入新的考试数据到数据库
-        if insert_exam_data(
-            exam_id=exam_uuid,
-            name=exam_data.get("examName"),
-            start_time=int(
-                datetime.strptime(exam_data.get("startDate"), "%Y-%m-%d %H:%M")
-                .replace(second=0)
-                .timestamp()
-            ),  # 将开始日期转换为时间戳
-            end_time=int(
-                datetime.strptime(exam_data.get("endDate"), "%Y-%m-%d %H:%M")
-                .replace(second=0)
-                .timestamp()
-            ),  # 将结束日期转换为时间戳
-            allow_answer_when_expired=int(exam_data.get("allowAnswerWhenExpired")),
-            random_question=int(exam_data.get("randomQuestions")),
-        ):
-            # 解析上传的Excel文件中的试题
-            questions = questions_xlsx_parse(file.read())
-            for question in questions:
-                # 为每个试题生成唯一的UUID
-                question_uuid = str(uuid.uuid4())
-                # 插入试题数据到数据库
-                insert_question_data(
-                    question_id=question_uuid,
-                    exam_id=exam_uuid,
-                    num1=question[0],
-                    op=question[1],
-                    num2=question[2],
-                )
-            # 如果所有操作成功，构建成功的响应体
-            body = {"success": True, "msg": "添加考试成功！"}
-    except Exception as e:
-        # 如果发生异常，构建失败的响应体并包含错误信息
-        body = {"success": False, "msg": f"添加考试失败！{e}"}
+    # try:
+    # 生成新的考试UUID
+    exam_uuid = str(uuid.uuid4())
+    # 插入新的考试数据到数据库
+    if insert_exam_data(
+        exam_id=exam_uuid,
+        name=current_exam.get("examName"),
+        start_time=int(
+            datetime.strptime(current_exam.get("startDate"), "%Y-%m-%d %H:%M")
+            .replace(second=0)
+            .timestamp()
+        ),  # 将开始日期转换为时间戳
+        end_time=int(
+            datetime.strptime(current_exam.get("endDate"), "%Y-%m-%d %H:%M")
+            .replace(second=0)
+            .timestamp()
+        ),  # 将结束日期转换为时间戳
+        allow_answer_when_expired=int(current_exam.get("allowAnswerWhenExpired")),
+        random_question=int(current_exam.get("randomQuestions")),
+    ):
+        # 解析上传的Excel文件中的试题
+        questions = questions_xlsx_parse(file.read())
+        for question in questions:
+            # 为每个试题生成唯一的UUID
+            question_uuid = str(uuid.uuid4())
+            # 插入试题数据到数据库
+            insert_question_data(
+                question_id=question_uuid,
+                exam_id=exam_uuid,
+                num1=question[0],
+                op=question[1],
+                num2=question[2],
+            )
+        # 如果所有操作成功，构建成功的响应体
+        body = {"success": True, "msg": "添加考试成功！"}
+    else:
+        body = {"success": False, "msg": "添加考试失败！"}
+    # except Exception as e:
+    #     # 如果发生异常，构建失败的响应体并包含错误信息
+    #     body = {"success": False, "msg": f"添加考试失败！{e}"}
     # 返回 JSON 格式的响应
     return jsonify(body)
 
@@ -1175,13 +1222,22 @@ def teacher_modify_student() -> Response:
 
         # 检查新的学号是否已存在且不属于当前学生
         if data.get("number"):
-            existing_user = query_user_info(key="number", content=str(student_number))
-            if existing_user and existing_user.id.decode() != student_id:
-                body = {
-                    "success": False,
-                    "msg": "学号与已有数据重复！请检查学号是否填写正确！",
-                }
-                return jsonify(body)
+            existing_user = (
+                query_user_info(key="number", content=data.get("number"))
+                if query_exam_info(key="number", content=data.get("number"))
+                and query_exam_info(
+                    key="number", content=data.get("number")
+                ).id.decode()
+                != ""
+                else None
+            )
+            if existing_user:
+                if existing_user.id.decode() != student_id:
+                    body = {
+                        "success": False,
+                        "msg": "学号与已有数据重复！请检查学号是否填写正确！",
+                    }
+                    return jsonify(body)
 
         # 计算新的哈希密码，如果需要重置密码
         new_hashpass = (

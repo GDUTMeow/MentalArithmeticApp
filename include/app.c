@@ -114,6 +114,7 @@ int judge(float result, float user_input)
  */
 int generate_question_list(const char *exam_id, struct Question *question_list_to_return, int count)
 {
+    void free_question_list(struct Question *head_ptr);
     log_message(LOGLEVEL_INFO, "生成问题链表: exam_id=%s, count=%d", exam_id, count);
 
     if (exam_id == NULL || question_list_to_return == NULL)
@@ -186,6 +187,7 @@ int generate_question_list(const char *exam_id, struct Question *question_list_t
  */
 int randomize_question_list(struct Question *question_list_to_return, struct Question *original_question_list)
 {
+    void free_question_list(struct Question *head_ptr);
     log_message(LOGLEVEL_INFO, "开始随机化问题链表");
 
     if (original_question_list == NULL || question_list_to_return == NULL)

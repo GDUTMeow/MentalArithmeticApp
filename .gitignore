@@ -2,6 +2,7 @@ node_modules
 package-lock.json
 package.json
 logs
+*.log
 *.exe
 .idea
 *.db
@@ -10,3 +11,4 @@ venv
 *.dll
 __pycache__
 .vscode
+build

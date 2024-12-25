@@ -1,42 +1,58 @@
-    <!-- 顶栏 -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background-color: #8481d4">
-        <div class="container-fluid">
-            <!-- 顶栏图标 -->
-            <a class="navbar-brand" href=""><img src="{{ url_for('static', filename='img/logo.png' )}}" height=30px style="padding-left: 10px;"></a>
+<!-- 顶栏 -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background-color: #8481d4">
+    <div class="container-fluid">
+        <!-- 顶栏图标 -->
+        <a class="navbar-brand" href=""><img src="{{ url_for('static', filename='img/logo.png' )}}" height=30px
+                style="padding-left: 10px;"></a>
+        <a href="https://github.com/GDUTMeow/MentalArithmeticApp" target="_blank" class="navbar-brand">
+            <img src="{{ url_for('static', filename='img/github-mark-white.png') }}" height="25px"
+                style="padding-left: 10px;">
+        </a>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <!-- 顶栏导航 -->
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <!-- 学生部分 -->
+                <div class="student-nav-items" style="display: flex;" id="student-nav-items">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#exam" id="stu-go-to-exam"
+                            onclick="hide_others('exam-entrance')">前往测试</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#scores" id="stu-check-self-scores"
+                            onclick="hide_others('scores-list-student')">查看成绩</a>
+                    </li>
+                </div>
 
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                <!-- 顶栏导航 -->
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <!-- 学生部分 -->
-                    <div class="student-nav-items" style="display: flex;" id="student-nav-items">
-                        <li class="nav-item">
-                            <a class="nav-link" href="#exam" id="stu-go-to-exam" onclick="hide_others('exam-entrance')">前往测试</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#scores" id="stu-check-self-scores" onclick="hide_others('scores-list-student')">查看成绩</a>
-                        </li>
-                    </div>
+                <!-- 老师部分 -->
+                <div class="teacher-nav-items" style="display: flex;" id="teacher-nav-items">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#exam-management" id="tea-personal-information"
+                            onclick="hide_others('exam-management-teacher')">考试管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#student-management" id="tea-personal-information"
+                            onclick="hide_others('student-management-teacher')">学生管理</a>
+                    </li>
+                </div>
 
-                    <!-- 老师部分 -->
-                    <div class="teacher-nav-items" style="display: flex;" id="teacher-nav-items">
-                        <li class="nav-item">
-                            <a class="nav-link" href="#exam-management" id="tea-personal-information" onclick="hide_others('exam-management-teacher')">考试管理</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#student-management" id="tea-personal-information" onclick="hide_others('student-management-teacher')">学生管理</a>
-                        </li>
-                    </div>
-                    
-                    <!-- 通用部分 -->
-                    <div class="general-nav-items" style="display: flex;">
-                        <li class="nav-item">
-                            <a class="nav-link" href="#info" id="personal-information" onclick="hide_others('personal-info')">个人信息</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#logout" id="personal-information" onclick="logout()">退出登录</a>
-                        </li>
-                    </div>
-            </div>
+                <!-- 通用部分 -->
+                <div class="general-nav-items" style="display: flex;">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#info" id="personal-information"
+                            onclick="hide_others('personal-info')">个人信息</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#logout" id="personal-information" onclick="logout()">退出登录</a>
+                    </li>
+                </div>
         </div>
-    </nav>
-    <!-- 顶栏结束 -->
+    </div>
+</nav>
+<!-- 顶栏结束 -->
+
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>

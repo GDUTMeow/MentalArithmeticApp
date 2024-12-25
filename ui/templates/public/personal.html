@@ -15,11 +15,10 @@
                                 用户名：{{ user.username if user is defined else "GamerNoTitle"
                                 }}<br />
                                 学号：{{ user.number if user is defined else "44666814" }}<br />
-                                班级：{{ user.class_name if user is defined else "计算机类8班"
-                                }}<br />
-                                角色： {% if user is defined %} {% if user.role == 0 %} 学生 {%
-                                elif user.role == 1 %} 教师 {% else %} 未知 {% endif %} {% else
-                                %} 未知 {% endif %}
+                                {% if user.class_name %} 
+                                班级：{{ user.class_name }}<br />
+                                {% endif %} 
+                                角色： {% if user is defined %} {% if user.role == 0 %} 学生 {% elif user.role == 1 %} 教师 {% else %} 未知 {% endif %} {% else %} 未知 {% endif %}
                             </p>
                         </div>
                         <div class="card-footer"></div>
@@ -47,7 +46,8 @@
                                 </div>
                                 <!-- 新密码 -->
                                 <div class="form-floating mb-3">
-                                    <input type="password" id="user-new-password" class="form-control" placeholder="新密码" />
+                                    <input type="password" id="user-new-password" class="form-control"
+                                        placeholder="新密码" />
                                     <label for="password">新密码</label>
                                 </div>
                                 <!-- 确认新密码 -->
@@ -77,11 +77,13 @@
 
     <script>
         function doPasswordModify() {
-            const originalPasswordInput =
-                document.getElementById("user-original-password");
+            const originalPasswordInput = document.getElementById(
+                "user-original-password"
+            );
             const newPasswordInput = document.getElementById("user-new-password");
-            const confirmNewPasswordInput =
-                document.getElementById("user-confirm-password");
+            const confirmNewPasswordInput = document.getElementById(
+                "user-confirm-password"
+            );
             const modifyPasswordButton = document.getElementById(
                 "user-modify-password-button"
             );
@@ -115,6 +117,7 @@
                         originalPasswordInput.value = "";
                         newPasswordInput.value = "";
                         confirmNewPasswordInput.value = "";
+                        logout();
                     } else {
                         alert("密码修改失败：" + data.msg);
                     }

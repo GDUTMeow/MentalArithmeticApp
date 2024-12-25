@@ -226,6 +226,8 @@
             if (result.success) {
                 document.getElementById("exam-result-msg").textContent =
                     "提交成功！请前往成绩查看页面查看最终成绩。";
+                alert("提交成功！请前往成绩查看页面查看最终成绩。");
+                location.reload();
             } else {
                 document.getElementById("exam-result-msg").textContent =
                     "提交失败，请稍后重试。";

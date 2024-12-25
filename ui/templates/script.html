@@ -356,6 +356,7 @@
                 console.log("服务器响应数据:", data);
                 if (data.success) {
                     alert("考试信息添加成功！");
+                    location.reload();
                 } else {
                     // 显示错误消息
                     alert(`添加考试失败！${data.msg}`);
@@ -767,6 +768,7 @@
             .then((data) => {
                 if (data.success) {
                     alert(data.msg);
+                    location.reload();
                 } else {
                     alert("导入失败：" + data.msg);
                 }
@@ -1054,6 +1056,7 @@
             .then((data) => {
                 if (data.success) {
                     alert("学生信息修改成功。");
+                    location.reload();
                 } else {
                     alert("修改失败：" + data.msg);
                 }
