@@ -154,6 +154,8 @@ def students_xlsx_parser(raw_data: bytes) -> list:
     for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         try:
             number, name, student_class, password = row[:4]
+            name = str(name)
+            student_class = str(student_class)
             if not all([number, name, student_class, password]):
                 break
             if int(number) > 4294967295 or int(number) <= 0:

@@ -120,7 +120,7 @@ def general_register() -> Response:
     number: int = int(data.get("number", "0"))
     username: str = data.get("username", "")
     password: str = data.get("password", "")
-
+    
     # 检查所有必填字段是否提供
     if name and number and username and password:
         # 查询数据库中是否已存在该用户名的用户
@@ -1001,7 +1001,7 @@ def teacher_add_students() -> Response:
                 }
                 return jsonify(body)
             # 检查学号是否已存在，避免重复
-            if query_user_info(key="number", content=student.get("number")):
+            if query_user_info(key="number", content=student.get("number")).id.decode() != "":
                 body = {
                     "success": False,
                     "msg": "学号与已有数据重复！请检查学号是否填写正确！",
