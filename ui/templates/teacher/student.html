@@ -30,8 +30,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set students = students|default({"student_list": [{"id": "UUID4", "username": "student1", "name": "张三", "class_name": "一班", "number": 1001}, {"id": "UUID5", "username": "student2", "name": "李四", "class_name": "二班", "number": 1002}]}) %}
-                        {% for item in students.student_list %}
+                        {% set students = students|default({"data": [{"id": "UUID4", "username": "student1", "name": "张三", "class_name": "一班", "number": 1001}, {"id": "UUID5", "username": "student2", "name": "李四", "class_name": "二班", "number": 1002}]}) %}
+                        {% for item in students.data %}
                         <tr>
                             <td><input type="checkbox" class="student-select" value="{{ item.id }}"></td>
                             <th scope="row">{{ loop.index }}</th>

@@ -368,7 +368,7 @@ DATABASE_LIB.edit_user_data.argtypes = [
     ctypes.c_int,  # role
     ctypes.c_char_p,  # name
     ctypes.c_char_p,  # class_name
-    ctypes.c_int,  # number
+    ctypes.c_uint,  # number
     ctypes.c_char_p,  # belong_to
 ]
 DATABASE_LIB.edit_user_data.restype = ctypes.c_int

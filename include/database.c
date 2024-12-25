@@ -1591,7 +1591,7 @@ int del_question_data(const char *question_id)
  * @param belong_to 新的归属教师ID（UUID，可为空）
  * @return int 函数执行成功返回0，否则返回1
  */
-int edit_user_data(const char *user_id, const char *username, const char *hashpass, const char *salt, int role, const char *name, const char *class_name, int number, const char *belong_to)
+int edit_user_data(const char *user_id, const char *username, const char *hashpass, const char *salt, int role, const char *name, const char *class_name, unsigned int number, const char *belong_to)
 {
     FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
     if (log_file == NULL)
@@ -1677,7 +1677,7 @@ int edit_user_data(const char *user_id, const char *username, const char *hashpa
         goto cleanup;
     }
 
-    rc = sqlite3_bind_int(stmt, 7, number);
+    rc = sqlite3_bind_int64(stmt, 7, number);
     if (rc != SQLITE_OK)
     {
         get_current_time(current_time, sizeof(current_time));

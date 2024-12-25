@@ -827,7 +827,7 @@
                         row.parentNode.removeChild(row);
                     });
                 } else {
-                    alert("删除失败：" + data.message);
+                    alert("删除失败：" + data.msg);
                 }
             })
             .catch((error) => {
@@ -897,7 +897,8 @@
             .then((response) => response.json())
             .then((data) => {
                 if (data.success) {
-                    const student = data.student;
+                    const student = data.data;
+                    console.log(data.data);
                     // 填充修改表单
                     document.getElementById("modify-student-id").value = student.id;
                     document.getElementById("modify-student-name").value = student.name;
@@ -909,12 +910,6 @@
                     // 重置密码选项
                     resetPasswordCheckbox.checked = false;
                     passwordFields.style.display = "none"; // 隐藏密码输入框
-
-                    // 清除之前选择的文件
-                    modifyStudentXlsxFile = null;
-                    document.getElementById("modify-student-xlsx-file-name").innerText =
-                        "请选择要导入的学生文件（xlsx格式）";
-                    modifyStudentConfirmButton.disabled = false; // 根据需求可以调整是否需要文件
 
                     // 清空密码字段
                     newPasswordInput.value = "";
@@ -1015,7 +1010,6 @@
         const studentClassName = modifyStudentClassNameInput.value.trim();
         const studentNumber = modifyStudentNumberInput.value.trim();
         const resetPassword = resetPasswordCheckbox.checked;
-        const xlsxFile = modifyStudentXlsxFile;
 
         if (
             !studentId ||
@@ -1050,9 +1044,6 @@
             formData.append("newPassword", newPasswordInput.value.trim());
             // 视需求是否需要将确认密码发送到服务器
         }
-        if (xlsxFile) {
-            formData.append("xlsxFile", xlsxFile);
-        }
 
         // 发送 POST 请求到服务器 API
         fetch("/api/v1/teacher/modifyStudent", {
@@ -1063,10 +1054,8 @@
             .then((data) => {
                 if (data.success) {
                     alert("学生信息修改成功。");
-                    // 重新加载学生表格或更新对应的行
-                    location.reload(); // 简单刷新页面
                 } else {
-                    alert("修改失败：" + data.message);
+                    alert("修改失败：" + data.msg);
                 }
             })
             .catch((error) => {

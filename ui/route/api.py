@@ -15,6 +15,7 @@ from utils.database import (
     delete_exam_data,
     edit_exam_data,
     delete_question_data,
+    delete_user_data,
 )
 from utils.app import (
     generate_question_list,
@@ -685,12 +686,21 @@ def teacher_add_students() -> Response:
     if not teacher_id:
         body = {"success": False, "msg": "未找到教师信息！请重新登录！"}
         return jsonify(body)
-    if student_file == None:    # 当用户没有上传文件，认为是单个用户添加
+    if student_file == None:  # 当用户没有上传文件，认为是单个用户添加
         try:
-            if not all([student.get("studentName"), student.get("className"), student.get("number")]):
+            if not all(
+                [
+                    student.get("studentName"),
+                    student.get("className"),
+                    student.get("number"),
+                ]
+            ):
                 body = {"success": False, "msg": "请填写完整的学生信息！"}
                 return jsonify(body)
-            if int(student.get("number")) < 0 or int(student.get("number")) > 4294967295:
+            if (
+                int(student.get("number")) < 0
+                or int(student.get("number")) > 4294967295
+            ):
                 body = {
                     "success": False,
                     "msg": "学号不合法！请填写正确的学号！",
@@ -705,11 +715,11 @@ def teacher_add_students() -> Response:
                 return jsonify(body)
             user_id = str(uuid.uuid4())
             salt = generate_salt()
-            password = generate_salt(32)    # 借一下哈希盐函数生成随机密码
+            password = generate_salt(32)  # 借一下哈希盐函数生成随机密码
             hashpass = sha512((salt + password).encode()).hexdigest()
             if insert_user_data(
                 user_id,
-                str(student.get("number")), # 以学号作为学生的登录依据
+                str(student.get("number")),  # 以学号作为学生的登录依据
                 hashpass,
                 salt,
                 0,
@@ -719,9 +729,12 @@ def teacher_add_students() -> Response:
                 teacher_id,
             ):
                 body = {"success": True, "msg": "添加学生成功！"}
-                
+
             else:
-                body = {"success": False, "msg": "添加学生失败！请查看日志文件获取更多信息！"}
+                body = {
+                    "success": False,
+                    "msg": "添加学生失败！请查看日志文件获取更多信息！",
+                }
             return jsonify(body)
         except Exception as e:
             body = {"success": False, "msg": f"添加学生失败！{e}"}
@@ -733,7 +746,9 @@ def teacher_add_students() -> Response:
         failed_students_list = []
         try:
             students = students_xlsx_parser(student_file.read())
-            for student in students:    # student的结构为：[number, name, class_name, password]
+            for (
+                student
+            ) in students:  # student的结构为：[number, name, class_name, password]
                 # 学号去重
                 tmp_user = query_user_info(key="number", content=str(student[0]))
                 user = tmp_user if tmp_user.id.decode() != "" else None
@@ -785,14 +800,147 @@ def teacher_add_students() -> Response:
 
 @teacher_api_v1.route("/api/v1/teacher/deleteStudents", methods=["POST"])
 def teacher_delete_students():
-    pass
+    data = request.json
+    students_to_delete = data.get("studentIds")
+    try:
+        for student in students_to_delete:
+            if not delete_user_data(student):
+                raise Exception(student + "删除失败！")
+        body = {"success": True, "msg": "删除学生成功！"}
+        return jsonify(body)
+    except Exception as e:
+        body = {"success": False, "msg": f"删除学生失败！{e}"}
+        return jsonify(body)
+
+
+@teacher_api_v1.route("/api/v1/teacher/getAllStudents")
+def teacher_get_all_students(retJSON: int = 0) -> Response | dict:
+    students = [
+        item
+        for item in query_users_info_all(999)
+        if item.id.decode() != ""
+        and item.role == 0
+        and item.belong_to.decode()
+        == jwt.decode(request.cookies.get("token"), JWT_KEY, algorithms=["HS256"]).get(
+            "id"
+        )
+    ]
+    if students:
+        body = {
+            "success": True,
+            "msg": "获取学生列表成功",
+            "data": [
+                {
+                    "id": student.id.decode(),
+                    "number": student.number,
+                    "name": student.name.decode(),
+                    "class_name": student.class_name.decode(),
+                    "username": student.username.decode(),
+                }
+                for student in students
+            ],
+        }
+    else:
+        body = {
+            "success": False,
+            "msg": "获取学生列表失败",
+            "data": [],
+        }
+    return body if retJSON else jsonify(body)
 
 
 @teacher_api_v1.route("/api/v1/teacher/getStudent/<uuid:UUID>")
 def teacher_get_student(UUID: str):
-    pass
+    student_id = str(UUID)
+    student = query_user_info(key="id", content=student_id)
+    if student:
+        body = {
+            "success": True,
+            "msg": "获取学生信息成功",
+            "data": {
+                "id": student.id.decode(),
+                "number": student.number,
+                "name": student.name.decode(),
+                "class_name": student.class_name.decode(),
+                "username": student.username.decode(),
+            },
+        }
+    else:
+        body = {
+            "success": False,
+            "msg": f"未找到ID为 {student_id} 的学生！",
+            "data": {},
+        }
+    return jsonify(body)
 
 
 @teacher_api_v1.route("/api/v1/teacher/modifyStudent", methods=["POST"])
 def teacher_modify_student():
-    pass
+    # studentId: b8c7470a-8c40-46f8-93d3-a237f0a937f0
+    # name: 李四
+    # className: 24计算机类77班
+    # number: 3224008516
+    # resetPassword: 1
+    # newPassword: 12345678
+    data = request.form
+    student_id = data.get("studentId")
+    student = query_users_info_all(1, key="id", content=student_id)
+    if student:
+        student = student[0]
+        try:
+            if not all(
+                [
+                    data.get("name"),
+                    data.get("className"),
+                    data.get("number"),
+                ]
+            ):
+                body = {"success": False, "msg": "请填写完整的学生信息！"}
+                return jsonify(body)
+            if int(data.get("number")) < 0 or int(data.get("number")) > 4294967295:
+                body = {
+                    "success": False,
+                    "msg": "学号不合法！请填写正确的学号！",
+                }
+                return jsonify(body)
+            salt = (
+                generate_salt()
+                if data.get("resetPassword") == "1"
+                else student.salt.decode()
+            )
+            tmp_user = (
+                query_user_info(key="number", content=data.get("number"))
+                if query_user_info(key="number", content=data.get("number")).id.decode()
+                != ""
+                else None
+            )
+            if tmp_user:
+                if tmp_user.id.decode() != student_id:
+                    body = {
+                        "success": False,
+                        "msg": "学号与已有数据重复！请检查学号是否填写正确！",
+                    }
+                    return jsonify(body)
+            if edit_user_data(
+                student_id,
+                data.get("number"),
+                (
+                    sha512((salt + data.get("newPassword")).encode()).hexdigest()
+                    if data.get("resetPassword") == "1"
+                    else student.hashpass.decode()
+                ),
+                salt,
+                student.role,
+                data.get("name"),
+                data.get("className"),
+                int(data.get("number")),
+                student.belong_to.decode(),
+            ):
+                body = {"success": True, "msg": "修改学生信息成功！"}
+            else:
+                body = {"success": False, "msg": "修改学生信息失败！"}
+        except Exception as e:
+            body = {"success": False, "msg": f"修改学生信息失败！{e}"}
+    else:
+        body = {"success": False, "msg": f"未找到ID为 {student_id} 的学生！"}
+    return jsonify(body)

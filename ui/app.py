@@ -20,6 +20,7 @@ from route.api import (
     student_get_exam_info,
     student_get_score_list,
     teacher_get_all_exams,
+    teacher_get_all_students
 )
 from utils.database import query_user_info, query_score_info, query_scores_info_all
 from utils.tools import questions_xlsx_parse
@@ -178,12 +179,14 @@ def render_dashboard():
                                 ],
                             }
                             exams = teacher_get_all_exams(retJSON=1)
+                            students = teacher_get_all_students(retJSON=1)
                             return render_template(
                                 "dashboard.html",
                                 user=user_data,
                                 exam=exam,
                                 score=score,
                                 exams=exams,
+                                students=students,
                             )
                     else:
                         # 当前查询的用户不存在，认为JWT_KEY遭到泄露，强制弹回登录页面
