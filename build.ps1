@@ -173,11 +173,34 @@ Execute-Step -StepName "编译 Flask 服务器组件" -StepScript {
     --lto=yes --assume-yes-for-downloads ui/app.py
 }
 
+# 删除 DLL 文件
+Execute-Step -StepName "删除 DLL 文件" -StepScript {
+    Write-Log -Level "INFO" -Message "开始删除当前目录下的 DLL 文件..."
+
+    try {
+        # 获取所有 DLL 文件
+        $dllFiles = Get-ChildItem -Path . -Filter *.dll -ErrorAction Stop
+
+        if ($dllFiles) {
+            foreach ($dll in $dllFiles) {
+                Remove-Item -Path $dll.FullName -Force -ErrorAction Stop
+                Write-Log -Level "INFO" -Message "成功删除文件: $($dll.Name)"
+            }
+        } else {
+            Write-Log -Level "WARN" -Message "当前目录下没有找到 DLL 文件，跳过删除步骤。"
+        }
+    } catch {
+        Write-Log -Level "ERROR" -Message "删除 DLL 文件时发生错误：$_"
+        exit 1
+    }
+}
+
 # 记录脚本结束时间
 $scriptEndTime = Get-Date
 $scriptDuration = $scriptEndTime - $scriptStartTime
 Write-Log -Level "INFO" -Message "脚本总执行时间: $($scriptDuration.ToString())"
-
+# 退出虚拟环境
+deactivate
 # 完成
 Write-Log -Level "INFO" -Message "编译完成！"
 Pause

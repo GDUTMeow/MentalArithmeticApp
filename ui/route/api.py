@@ -96,7 +96,9 @@ def general_login() -> Response:
     if body.get("success"):
         # 生成JWT，包含用户角色和ID
         cookie = jwt.encode(
-            {"role": user.role, "id": user.id.decode(), "token": generate_salt()}, JWT_KEY, algorithm="HS256"
+            {"role": user.role, "id": user.id.decode(), "token": generate_salt()},
+            JWT_KEY,
+            algorithm="HS256",
         )
         cookie_age = 604800  # 设置cookie有效期为7天（7*24*60*60秒）
         response.set_cookie("token", cookie, max_age=cookie_age)
@@ -619,28 +621,46 @@ def teacher_add_exam() -> Response:
             "success": False,
             "msg": "当前要添加的考试信息有内容未填写，请检查所有窗格的填写情况！",
         }
+    if int(
+        datetime.strptime(current_exam["startDate"], "%Y-%m-%d %H:%M")
+        .replace(second=0)
+        .timestamp()
+    ) > int(
+        datetime.strptime(current_exam["endDate"], "%Y-%m-%d %H:%M")
+        .replace(second=0)
+        .timestamp()
+    ):
+        body = {
+            "success": False,
+            "msg": f"考试的开始时间（{current_exam.get('startDate')}）不能大于结束时间（{current_exam.get('endDate')}）"
+        }
+        return jsonify(body)
     # 查询所有考试信息，限制返回数量为999条
     all_exams = query_exams_info_all(999)
     for exam in all_exams:
         # 检查修改后的考试时间是否与其他考试时间重叠
-        if (
+        # 当数据库中的考试的结束时间小于当前考试的开始时间
+        # 或者数据库中的考试的开始时间大于当前考试的结束时间
+        # 类似于 ====(exam1)===========(current_exam)=========(exam2)====> 的时间线
+        #                 ↑ endTime   ↑ startTime  ↑ endTime ↑ startTime
+        if not (
             exam.start_time
-            <= int(
-                datetime.strptime(current_exam["startDate"], "%Y-%m-%d %H:%M")
-                .replace(second=0)
-                .timestamp()
-            )
-            and int(
+            > int(
                 datetime.strptime(current_exam["endDate"], "%Y-%m-%d %H:%M")
                 .replace(second=0)
                 .timestamp()
             )
-            <= exam.end_time
+            or exam.end_time
+            < int(
+                datetime.strptime(current_exam["startDate"], "%Y-%m-%d %H:%M")
+                .replace(second=0)
+                .timestamp()
+            )
         ):
             # 如果存在时间重叠，返回错误消息
             body = {
                 "success": False,
-                "msg": f"无法进行添加，要添加的考试占用的考试时间段与其他考试（{exam.name.decode()}）时间段重合！",
+                "msg": f"无法进行添加，要添加的考试占用的考试时间段与其他考试（{exam.name.decode()}）时间段重合（{datetime.fromtimestamp(exam.start_time)} ~ {datetime.fromtimestamp(exam.end_time)}）！",
             }
             return jsonify(body)
     file = request.files.get("xlsxFile")  # 获取上传的Excel文件
@@ -753,6 +773,27 @@ def teacher_modify_exam() -> Response:
     # 获取请求中的表单数据
     data = request.form
     exam_id = data.get("examId")  # 获取要修改的考试ID
+    if not all([data.get("examId"), data.get("examName"), data.get("startDate"), data.get("endDate"), data.get("allowAnswerWhenExpired"), data.get("randomQuesitons")]):
+        body = {
+            "success": False,
+            "msg": "传入的修改信息不能为空！"
+        }
+    current_exam_start_time_from_front = int(
+        datetime.strptime(data["startDate"], "%Y-%m-%d %H:%M")
+        .replace(second=0)
+        .timestamp()
+    )
+    current_exam_end_time_from_front = int(
+        datetime.strptime(data["endDate"], "%Y-%m-%d %H:%M")
+        .replace(second=0)
+        .timestamp()
+    )
+    if current_exam_start_time_from_front >= current_exam_end_time_from_front:
+        body = {
+            "success": False,
+            "msg": "考试的开始时间不能大于结束时间！"
+        }
+        return jsonify(body)
     # 查询当前考试的信息
     current_exam = query_exam_info(key="id", content=exam_id)
 
@@ -760,16 +801,18 @@ def teacher_modify_exam() -> Response:
         # 查询所有考试信息，限制返回数量为999条
         all_exams = query_exams_info_all(999)
         for exam in all_exams:
-            # 检查修改后的考试时间是否与其他考试时间重叠
-            if (
-                exam.start_time <= current_exam.start_time
-                and current_exam.end_time <= exam.end_time
-                and exam.id.decode() != exam_id
+                # 检查修改后的考试时间是否与其他考试时间重叠
+                # 当数据库中的考试的结束时间小于当前考试的开始时间
+                # 或者数据库中的考试的开始时间大于当前考试的结束时间
+                # 类似于 ====(exam1)===========(current_exam)=========(exam2)====> 的时间线
+                #                 ↑ endTime   ↑ startTime  ↑ endTime ↑ startTime
+            if not (
+                exam.end_time < current_exam_start_time_from_front or exam.start_time > current_exam_end_time_from_front
             ):
                 # 如果存在时间重叠，返回错误消息
                 body = {
                     "success": False,
-                    "msg": f"无法进行修改！修改后的考试时间段与其他考试（{exam.name.decode()}）时间段重合！",
+                    "msg": f"无法进行修改！修改后的考试时间段与其他考试（{exam.name.decode()}）时间段（{datetime.fromtimestamp(exam.start_time)} ~ {datetime.fromtimestamp(exam.end_time)}）重合！",
                 }
                 return jsonify(body)
         try:
