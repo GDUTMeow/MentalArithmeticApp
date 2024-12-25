@@ -14,36 +14,50 @@
                             </p>
                         </div>
                         <div class="card-footer">
-                            平均分：
-                            <score id="average-score">{{ score and score.average or 56562 }}</score>
+                            平均分：<score id="average-score">{{ score and score.average or 56562 }}</score>
                         </div>
                     </div>
                 </div>
 
                 <div class="col-md-8">
                     <div class="table-responsive" style="
-              box-shadow: 2px 15px -3px rgba(var(--mdb-box-shadow-color-rgb), 0.07),
-                0 10px 20px -2px rgba(var(--mdb-box-shadow-color-rgb), 0.04);
-            ">
+                        box-shadow: 2px 15px -3px rgba(var(--mdb-box-shadow-color-rgb), 0.07),
+                        0 10px 20px -2px rgba(var(--mdb-box-shadow-color-rgb), 0.04);
+                    ">
+                        <!-- 筛选输入框 -->
+                        <label>筛选条件</label>
+                        <div class="col-md-12 mb-3">
+                            <!-- 分数筛选 -->
+                            <input type="number" id="filter-score" class="form-control" placeholder="按分数筛选">
+                        </div>
+                        
+                        <div class="col-md-12 mb-3">
+                            <!-- 逾期作答筛选 -->
+                            <select id="filter-expired" class="form-control">
+                                <option value="">选择是否逾期</option>
+                                <option value="1">是</option>
+                                <option value="0">否</option>
+                            </select>
+                        </div>
+
                         <table class="table table-striped table-hover" id="score-table">
                             <thead>
                                 <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">考试名称</th>
-                                    <th scope="col">考试成绩</th>
-                                    <th scope="col">逾期作答</th>
+                                    <th scope="col" onclick="sortTable(0)">#</th>
+                                    <th scope="col" onclick="sortTable(1)">考试名称</th>
+                                    <th scope="col" onclick="sortTable(2)">考试成绩</th>
+                                    <th scope="col" onclick="sortTable(3)">逾期作答</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {% set score = score|default({"data": [{"exam_name": "测试考试",
-                                "score": 114514, "expired": 1}]}) %} {% for item in
-                                score.data %}
-                                <tr>
-                                    <th scope="row">{{ loop.index }}</th>
-                                    <td>{{ item.exam_name }}</td>
-                                    <td>{{ item.score }}</td>
-                                    <td>{% if item.expired == 1 %}是{% else %}否{% endif %}</td>
-                                </tr>
+                            <tbody id="scores-table-body">
+                                {% set score = score|default({"data": [{"exam_name": "测试考试", "score": 114514, "expired": 1}]}) %}
+                                {% for item in score.data %}
+                                    <tr>
+                                        <th scope="row">{{ loop.index }}</th>
+                                        <td>{{ item.exam_name }}</td>
+                                        <td>{{ item.score }}</td>
+                                        <td>{% if item.expired == 1 %}是{% else %}否{% endif %}</td>
+                                    </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -114,4 +128,74 @@
             console.error("成绩表单容器未找到！");
         }
     });
+</script>
+
+<script>
+    let sortOrder = { // 用于保存每列的排序顺序
+        1: true, // 默认升序
+        2: true,
+        3: true
+    };
+
+    // 过滤数据函数
+    function filterScores() {
+        let scoreFilter = document.getElementById("filter-score").value;
+        let expiredFilter = document.getElementById("filter-expired").value;
+
+        let tableBody = document.getElementById("scores-table-body");
+        let rows = tableBody.getElementsByTagName("tr");
+
+        for (let i = 0; i < rows.length; i++) {
+            let row = rows[i];
+            let score = parseFloat(row.cells[2].textContent.trim());
+            let expired = row.cells[3].textContent.trim() === "是" ? 1 : 0;
+
+            let showRow = true;
+
+            // 筛选分数
+            if (scoreFilter && score < parseFloat(scoreFilter)) {
+                showRow = false;
+            }
+
+            // 筛选逾期作答
+            if (expiredFilter && expired != expiredFilter) {
+                showRow = false;
+            }
+
+            row.style.display = showRow ? "" : "none";
+        }
+    }
+
+    // 排序函数
+    function sortTable(columnIndex) {
+        let tableBody = document.getElementById("scores-table-body");
+        let rows = Array.from(tableBody.getElementsByTagName("tr"));
+
+        let isNumeric = columnIndex === 2; // 只有成绩列需要数字比较
+
+        rows.sort((rowA, rowB) => {
+            let cellA = rowA.cells[columnIndex].textContent.trim();
+            let cellB = rowB.cells[columnIndex].textContent.trim();
+
+            if (isNumeric) {
+                cellA = parseFloat(cellA);
+                cellB = parseFloat(cellB);
+            }
+
+            if (sortOrder[columnIndex]) {
+                return (cellA < cellB) ? -1 : (cellA > cellB) ? 1 : 0;
+            } else {
+                return (cellA > cellB) ? -1 : (cellA < cellB) ? 1 : 0;
+            }
+        });
+
+        rows.forEach(row => tableBody.appendChild(row));
+
+        // 切换排序顺序
+        sortOrder[columnIndex] = !sortOrder[columnIndex];
+    }
+
+    // 监听筛选输入框变化
+    document.getElementById("filter-score").addEventListener("input", filterScores);
+    document.getElementById("filter-expired").addEventListener("change", filterScores);
 </script>
