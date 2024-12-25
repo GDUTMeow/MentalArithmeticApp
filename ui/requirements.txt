@@ -2,3 +2,4 @@ flask
 pyjwt
 openpyxl
 nuitka
+colorlog

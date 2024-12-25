@@ -62,8 +62,8 @@ History:        暂无
 #define USER_DB "db/user.db"               // 用户数据库
 
 /*** 日志等级 ***/
-#define LOGLEVEL_ERROR "ERROR"
-#define LOGLEVEL_INFO "INFO"
+#define LOGLEVEL_ERROR "ERROR" // 错误级别日志
+#define LOGLEVEL_INFO "INFO"   // 信息级别日志
 
 /*** 日志部分 ***/
 #define LOG_FOLDER "logs"          // 日志文件夹路径
@@ -73,11 +73,12 @@ History:        暂无
  * @brief 定义绑定参数的类型枚举
  *
  * @details 此枚举用于指定在 SQL 语句中绑定参数的类型，确保数据
- *          在传递给数据库时类型正确。它支持三种基本的数据类型：
- *          文本、整数和浮点数。
+ *          在传递给数据库时类型正确。它支持四种基本的数据类型：
+ *          文本、整数、无符号整数和浮点数。
  *
  *          - **BIND_TYPE_TEXT**: 用于绑定字符串类型的数据，如 `char *`。
  *          - **BIND_TYPE_INT**: 用于绑定整数类型的数据，如 `int`。
+ *          - **BIND_TYPE_UINT**: 用于绑定无符号整数类型的数据，如 `unsigned int`。
  *          - **BIND_TYPE_FLOAT**: 用于绑定浮点数类型的数据，如 `float` 或 `double`。
  *
  *          在调用通用的插入函数 `insert_data_to_db` 时，通过
@@ -86,10 +87,10 @@ History:        暂无
  */
 typedef enum BINDING
 {
-    BIND_TYPE_TEXT,
-    BIND_TYPE_INT,
-    BIND_TYPE_UINT,
-    BIND_TYPE_FLOAT
+    BIND_TYPE_TEXT,  // 绑定文本类型
+    BIND_TYPE_INT,   // 绑定整数类型
+    BIND_TYPE_UINT,  // 绑定无符号整数类型
+    BIND_TYPE_FLOAT  // 绑定浮点数类型
 } BindType;
 
 /**
@@ -98,17 +99,25 @@ typedef enum BINDING
  * @param db_path 数据库路径
  * @param db 输出参数，数据库指针
  * @return int 成功返回0，否则返回1
+ *
+ * @details 此函数尝试打开指定路径的 SQLite 数据库。
+ *          如果打开失败，则记录错误日志并关闭数据库连接。
  */
 int open_database(const char *db_path, sqlite3 **db)
 {
+    // 尝试打开数据库
     int rc = sqlite3_open(db_path, db);
     if (rc != SQLITE_OK)
     {
+        // 记录错误日志，包含数据库路径和错误消息
         log_message(LOGLEVEL_ERROR, "无法打开数据库 '%s'：%s", db_path, sqlite3_errmsg(*db));
-        sqlite3_close(*db);
-        return 1;
+        sqlite3_close(*db); // 关闭数据库连接
+        return 1;           // 返回错误代码
     }
-    return 0;
+
+    // 记录成功打开数据库的信息
+    log_message(LOGLEVEL_INFO, "成功打开数据库 '%s'", db_path);
+    return 0; // 成功返回0
 }
 
 /**************************** 单条数据查询开始 ****************************/
@@ -141,7 +150,7 @@ int query_user_info(const char *key, const char *content, struct User *user_to_r
     // 打开数据库
     if (open_database(USER_DB, &db))
     {
-        printf("打开数据库失败了……");
+        log_message(LOGLEVEL_ERROR, "打开数据库失败：%s", USER_DB);
         return 1; // 打开数据库失败
     }
 
@@ -169,18 +178,18 @@ int query_user_info(const char *key, const char *content, struct User *user_to_r
     if (rc == SQLITE_ROW)
     {
         // 从查询结果中提取数据
-        strncpy(user_to_return->id, (const char *)sqlite3_column_text(stmt, 0), 37);
-        strncpy(user_to_return->username, (const char *)sqlite3_column_text(stmt, 1), 25);
+        strncpy(user_to_return->id, (const char *)sqlite3_column_text(stmt, 0), sizeof(user_to_return->id) - 1);
+        strncpy(user_to_return->username, (const char *)sqlite3_column_text(stmt, 1), sizeof(user_to_return->username) - 1);
 
         // hashpass和salt不在User结构体中使用，略过
         // sqlite3_column_text(stmt, 2) => hashpass
         // sqlite3_column_text(stmt, 3) => salt
 
         user_to_return->role = sqlite3_column_int(stmt, 4);
-        strncpy(user_to_return->name, (const char *)sqlite3_column_text(stmt, 5), 46);
-        strncpy(user_to_return->class_name, (const char *)sqlite3_column_text(stmt, 6), 31);
+        strncpy(user_to_return->name, (const char *)sqlite3_column_text(stmt, 5), sizeof(user_to_return->name) - 1);
+        strncpy(user_to_return->class_name, (const char *)sqlite3_column_text(stmt, 6), sizeof(user_to_return->class_name) - 1);
         user_to_return->number = (unsigned int)sqlite3_column_int(stmt, 7);
-        strncpy(user_to_return->belong_to, (const char *)sqlite3_column_text(stmt, 8), 37);
+        strncpy(user_to_return->belong_to, (const char *)sqlite3_column_text(stmt, 8), sizeof(user_to_return->belong_to) - 1);
 
         // 获取用户权限
         user_to_return->permission = get_permission(*user_to_return);
@@ -190,7 +199,7 @@ int query_user_info(const char *key, const char *content, struct User *user_to_r
     else
     {
         // 没有查询到结果
-        log_message(LOGLEVEL_INFO, "没有找到符合条件的用户信息");
+        log_message(LOGLEVEL_INFO, "没有找到符合条件的用户信息，条件：%s = %s", key, content);
     }
 
     // 清理和关闭数据库
@@ -198,6 +207,7 @@ int query_user_info(const char *key, const char *content, struct User *user_to_r
     sqlite3_close(db);
     return 0;
 }
+
 /**
  * @brief 按照特定标准查询数据库 db/examination.db 中符合条件的考试条目（只返回第一条）
  *
@@ -227,6 +237,7 @@ int query_exam_info(const char *key, const char *content, struct SqlResponseExam
     // 打开数据库
     if (open_database(EXAMINATION_DB, &db))
     {
+        log_message(LOGLEVEL_ERROR, "打开数据库失败：%s", EXAMINATION_DB);
         return 1;
     }
 
@@ -265,7 +276,7 @@ int query_exam_info(const char *key, const char *content, struct SqlResponseExam
     }
     else
     {
-        log_message(LOGLEVEL_INFO, "没有找到符合条件的考试信息");
+        log_message(LOGLEVEL_INFO, "没有找到符合条件的考试信息，条件：%s = %s", key, content);
     }
 
     // 清理和关闭数据库
@@ -303,6 +314,7 @@ int query_question_info(const char *key, const char *content, struct SqlResponse
     // 打开数据库
     if (open_database(EXAMINATION_DB, &db))
     {
+        log_message(LOGLEVEL_ERROR, "打开数据库失败：%s", EXAMINATION_DB);
         return 1;
     }
 
@@ -332,15 +344,15 @@ int query_question_info(const char *key, const char *content, struct SqlResponse
         // 填充SqlResponseQuestion结构体
         strncpy(question_to_return->id, (const char *)sqlite3_column_text(stmt, 0), sizeof(question_to_return->id) - 1);
         strncpy(question_to_return->exam_id, (const char *)sqlite3_column_text(stmt, 1), sizeof(question_to_return->exam_id) - 1);
-        question_to_return->num1 = sqlite3_column_double(stmt, 2);
+        question_to_return->num1 = sqlite3_column_int(stmt, 2);
         question_to_return->op = sqlite3_column_int(stmt, 3);
-        question_to_return->num2 = sqlite3_column_double(stmt, 4);
+        question_to_return->num2 = sqlite3_column_int(stmt, 4);
 
         log_message(LOGLEVEL_INFO, "成功查询到题目信息，题目ID：%s", question_to_return->id);
     }
     else
     {
-        log_message(LOGLEVEL_INFO, "没有找到符合条件的题目信息");
+        log_message(LOGLEVEL_INFO, "没有找到符合条件的题目信息，条件：%s = %s", key, content);
     }
 
     // 清理和关闭数据库
@@ -365,18 +377,18 @@ int query_score_info(const char *key, const char *content, struct SqlResponseSco
     int rc;
 
     // 定义SQL查询语句模板，允许根据 key 来动态选择字段进行查询
-    char *sql = "SELECT id, exam_id, user_id, score, expired_flag FROM scores WHERE ";
+    char sql[256] = {0};
 
     // 根据key值判断选择查询条件
     if (strcmp(key, "exam_id") == 0)
     {
         // 查询考试ID
-        strcat(sql, "exam_id = ? LIMIT 1;");
+        snprintf(sql, sizeof(sql), "SELECT id, exam_id, user_id, score, expired_flag FROM scores WHERE exam_id = ? LIMIT 1;");
     }
     else if (strcmp(key, "user_id") == 0)
     {
         // 查询用户ID
-        strcat(sql, "user_id = ? LIMIT 1;");
+        snprintf(sql, sizeof(sql), "SELECT id, exam_id, user_id, score, expired_flag FROM scores WHERE user_id = ? LIMIT 1;");
     }
     else
     {
@@ -388,16 +400,12 @@ int query_score_info(const char *key, const char *content, struct SqlResponseSco
     // 打开数据库
     if (open_database(SCORES_DB, &db))
     {
+        log_message(LOGLEVEL_ERROR, "打开数据库失败：%s", SCORES_DB);
         return 1;
     }
 
     // 初始化传入的score_to_return结构体来避免出错
-    strcpy(score_to_return->id, "");
-    strcpy(score_to_return->exam_id, "");
-    strcpy(score_to_return->user_id, "");
-    score_to_return->id[36] = '\0';
-    score_to_return->exam_id[36] = '\0';
-    score_to_return->user_id[36] = '\0';
+    memset(score_to_return, 0, sizeof(struct SqlResponseScore));
 
     // 准备查询语句
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
@@ -710,6 +718,7 @@ int query_users_info_all(struct SqlResponseUser *users_to_return, int length, co
     sqlite3_close(db);
     return 0; // 执行成功
 }
+
 /**
  * @brief 查询数据库 db/examination.db 中所有问题信息（返回多条数据），可按指定键和值进行过滤
  *
@@ -1015,27 +1024,16 @@ int query_scores_info_all(struct SqlResponseScore *scores_to_return, int length,
  */
 int insert_data_to_db(const char *db_path, const char *sql, const void **bindings, const BindType *types, int num_bindings)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
-    if (log_file == NULL)
-    {
-        printf("无法打开日志文件：%s\n", strerror(errno));
-        return 1;
-    }
-
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
-
-    char current_time[20];
 
     // 打开数据库
     rc = sqlite3_open(db_path, &db);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法打开数据库 '%s'：%s\n", current_time, LOGLEVEL_ERROR, db_path, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法打开数据库 '%s'：%s", db_path, sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1043,10 +1041,8 @@ int insert_data_to_db(const char *db_path, const char *sql, const void **binding
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法准备SQL语句：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法准备SQL语句：%s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1069,45 +1065,38 @@ int insert_data_to_db(const char *db_path, const char *sql, const void **binding
             break;
         default:
             // 未知类型
-            get_current_time(current_time, sizeof(current_time));
-            fprintf(log_file, "%s [%s]: 未知的绑定类型 %d\n", current_time, LOGLEVEL_ERROR, types[i]);
+            log_message(LOGLEVEL_ERROR, "未知的绑定类型 %d", types[i]);
             sqlite3_finalize(stmt);
             sqlite3_close(db);
-            fclose(log_file);
             return 1;
         }
 
         if (rc != SQLITE_OK)
         {
-            get_current_time(current_time, sizeof(current_time));
-            fprintf(log_file, "%s [%s]: 绑定参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+            log_message(LOGLEVEL_ERROR, "绑定参数失败：%s", sqlite3_errmsg(db));
             sqlite3_finalize(stmt);
             sqlite3_close(db);
-            fclose(log_file);
             return 1;
         }
     }
 
     // 执行SQL语句
     rc = sqlite3_step(stmt);
-    get_current_time(current_time, sizeof(current_time));
     if (rc != SQLITE_DONE)
     {
-        fprintf(log_file, "%s [%s]: 执行插入操作失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "执行插入操作失败：%s", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
     else
     {
-        fprintf(log_file, "%s [%s]: 数据插入成功！\n", current_time, LOGLEVEL_INFO);
+        log_message(LOGLEVEL_INFO, "数据插入成功！");
     }
 
     // 清理和关闭数据库
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-    fclose(log_file);
     return 0;
 }
 
@@ -1124,7 +1113,6 @@ int insert_data_to_db(const char *db_path, const char *sql, const void **binding
  */
 int insert_exam_data(const char *exam_id, const char *name, int start_time, int end_time, int allow_answer_when_expired, int random_question)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
     char current_time[20];
     const char *sql = "INSERT INTO examinations (id, name, start_time, end_time, allow_answer_when_expired, random_question) VALUES (?, ?, ?, ?, ?, ?);";
 
@@ -1132,15 +1120,13 @@ int insert_exam_data(const char *exam_id, const char *name, int start_time, int 
     if (allow_answer_when_expired != 0 && allow_answer_when_expired != 1)
     {
         get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 对考试数据库执行插入操作的时候遇到了问题: 逾期作答值非法！%d\n", current_time, LOGLEVEL_ERROR, allow_answer_when_expired);
-        fclose(log_file);
+        log_message(LOGLEVEL_ERROR, "对考试数据库执行插入操作的时候遇到了问题: 逾期作答值非法！%d", allow_answer_when_expired);
         return 1;
     }
     if (random_question != 0 && random_question != 1)
     {
         get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 对考试数据库执行插入操作的时候遇到了问题: 随机问题值非法！%d\n", current_time, LOGLEVEL_ERROR, random_question);
-        fclose(log_file);
+        log_message(LOGLEVEL_ERROR, "对考试数据库执行插入操作的时候遇到了问题: 随机问题值非法！%d", random_question);
         return 1;
     }
 
@@ -1151,7 +1137,6 @@ int insert_exam_data(const char *exam_id, const char *name, int start_time, int 
     // 调用通用插入函数
     int result = insert_data_to_db(EXAMINATION_DB, sql, bindings, types, 6);
 
-    fclose(log_file);
     return result;
 }
 
@@ -1167,7 +1152,6 @@ int insert_exam_data(const char *exam_id, const char *name, int start_time, int 
  */
 int insert_question_data(const char *question_id, const char *exam_id, int num1, int op, int num2)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
     char current_time[20];
     const char *sql = "INSERT INTO questions (id, exam_id, num1, op, num2) VALUES (?, ?, ?, ?, ?);";
 
@@ -1175,8 +1159,7 @@ int insert_question_data(const char *question_id, const char *exam_id, int num1,
     if (op != 0 && op != 1 && op != 2 && op != 3)
     {
         get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 对问题数据库执行插入操作的时候遇到了问题: 运算符值非法！%d\n", current_time, LOGLEVEL_ERROR, op);
-        fclose(log_file);
+        log_message(LOGLEVEL_ERROR, "对问题数据库执行插入操作的时候遇到了问题: 运算符值非法！%d", op);
         return 1;
     }
 
@@ -1187,7 +1170,6 @@ int insert_question_data(const char *question_id, const char *exam_id, int num1,
     // 调用通用插入函数
     int result = insert_data_to_db(EXAMINATION_DB, sql, bindings, types, 5);
 
-    fclose(log_file);
     return result;
 }
 
@@ -1203,7 +1185,6 @@ int insert_question_data(const char *question_id, const char *exam_id, int num1,
  */
 int insert_score_data(const char *score_id, const char *exam_id, const char *user_id, int score, int expired_flag)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
     char current_time[20];
     const char *sql = "INSERT INTO scores (id, exam_id, user_id, score, expired_flag) VALUES (?, ?, ?, ?, ?);";
 
@@ -1211,8 +1192,7 @@ int insert_score_data(const char *score_id, const char *exam_id, const char *use
     if (expired_flag != 0 && expired_flag != 1)
     {
         get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 对成绩数据库执行插入操作的时候遇到了问题: 逾期作答标记值非法！%d\n", current_time, LOGLEVEL_ERROR, expired_flag);
-        fclose(log_file);
+        log_message(LOGLEVEL_ERROR, "对成绩数据库执行插入操作的时候遇到了问题: 逾期作答标记值非法！%d", expired_flag);
         return 1;
     }
 
@@ -1222,8 +1202,11 @@ int insert_score_data(const char *score_id, const char *exam_id, const char *use
 
     // 调用通用插入函数
     int result = insert_data_to_db(SCORES_DB, sql, bindings, types, 5);
-    log_message(LOGLEVEL_INFO, "成功插入了用户id为 %s 的成绩 %d\n", user_id, score);
-    fclose(log_file);
+    if (result == 0)
+    {
+        log_message(LOGLEVEL_INFO, "成功插入了用户ID为 %s 的成绩 %d", user_id, score);
+    }
+
     return result;
 }
 
@@ -1231,7 +1214,7 @@ int insert_score_data(const char *score_id, const char *exam_id, const char *use
  * @brief 向用户数据库的 users 表插入新的用户
  *
  * @param user_id 用户ID（唯一，UUID）
- * @param username 用户名，范围为[a-zA-Z0-9]{3, 24}
+ * @param username 用户名，范围为[a-zA-Z0-9]{3,24}
  * @param hashpass sha512(salt + passwd)
  * @param salt 盐
  * @param role 用户角色
@@ -1245,12 +1228,25 @@ int insert_user_data(const char *user_id, const char *username, const char *hash
 {
     const char *sql = "INSERT INTO users (id, username, hashpass, salt, role, name, class_name, number, belong_to) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
+    // 数据校验
+    if (strlen(username) < 3 || strlen(username) > 24)
+    {
+        log_message(LOGLEVEL_ERROR, "用户名长度不符合要求：%s", username);
+        return 1;
+    }
+
     // 定义绑定参数
     const void *bindings[] = {user_id, username, hashpass, salt, &role, name, class_name, &number, belong_to};
     const BindType types[] = {BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_INT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_UINT, BIND_TYPE_TEXT};
 
     // 调用通用插入函数
-    return insert_data_to_db(USER_DB, sql, bindings, types, 9);
+    int result = insert_data_to_db(USER_DB, sql, bindings, types, 9);
+    if (result == 0)
+    {
+        log_message(LOGLEVEL_INFO, "成功插入了用户ID为 %s 的用户数据", user_id);
+    }
+
+    return result;
 }
 
 /**************************** 单条数据插入结束 ****************************/
@@ -1265,38 +1261,26 @@ int insert_user_data(const char *user_id, const char *username, const char *hash
  */
 int del_user_data(const char *user_id)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
-    if (log_file == NULL)
-    {
-        printf("无法打开日志文件：%s\n", strerror(errno));
-        return 1;
-    }
-
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
-    char current_time[20];
-    const char *sql = "DELETE FROM users WHERE id = ?;";
-
+    
     // 打开数据库
     rc = sqlite3_open(USER_DB, &db);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法打开数据库 '%s'：%s\n", current_time, LOGLEVEL_ERROR, USER_DB, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法打开数据库 '%s'：%s", USER_DB, sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
     // 准备SQL语句
+    const char *sql = "DELETE FROM users WHERE id = ?;";
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法准备SQL语句：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法准备SQL语句：%s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1304,11 +1288,9 @@ int del_user_data(const char *user_id)
     rc = sqlite3_bind_text(stmt, 1, user_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定用户ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定用户ID参数失败：%s", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1316,23 +1298,19 @@ int del_user_data(const char *user_id)
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 删除用户数据失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "删除用户数据失败：%s", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
     else
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 成功删除用户数据，用户ID：%s\n", current_time, LOGLEVEL_INFO, user_id);
+        log_message(LOGLEVEL_INFO, "成功删除用户数据，用户ID：%s", user_id);
     }
 
     // 清理和关闭数据库
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-    fclose(log_file);
     return 0;
 }
 
@@ -1344,38 +1322,26 @@ int del_user_data(const char *user_id)
  */
 int del_exam_data(const char *exam_id)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
-    if (log_file == NULL)
-    {
-        printf("无法打开日志文件：%s\n", strerror(errno));
-        return 1;
-    }
-
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
-    char current_time[20];
-    const char *sql = "DELETE FROM examinations WHERE id = ?;";
-
+    
     // 打开数据库
     rc = sqlite3_open(EXAMINATION_DB, &db);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法打开数据库 '%s'：%s\n", current_time, LOGLEVEL_ERROR, EXAMINATION_DB, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法打开数据库 '%s'：%s", EXAMINATION_DB, sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
     // 准备SQL语句
+    const char *sql = "DELETE FROM examinations WHERE id = ?;";
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法准备SQL语句：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法准备SQL语句：%s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1383,11 +1349,9 @@ int del_exam_data(const char *exam_id)
     rc = sqlite3_bind_text(stmt, 1, exam_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定考试ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定考试ID参数失败：%s", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1395,23 +1359,19 @@ int del_exam_data(const char *exam_id)
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 删除考试数据失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "删除考试数据失败：%s", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
     else
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 成功删除考试数据，考试ID：%s\n", current_time, LOGLEVEL_INFO, exam_id);
+        log_message(LOGLEVEL_INFO, "成功删除考试数据，考试ID：%s", exam_id);
     }
 
     // 清理和关闭数据库
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-    fclose(log_file);
     return 0;
 }
 
@@ -1423,38 +1383,26 @@ int del_exam_data(const char *exam_id)
  */
 int del_score_data(const char *score_id)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
-    if (log_file == NULL)
-    {
-        printf("无法打开日志文件：%s\n", strerror(errno));
-        return 1;
-    }
-
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
-    char current_time[20];
-    const char *sql = "DELETE FROM scores WHERE id = ?;";
-
+    
     // 打开数据库
     rc = sqlite3_open(SCORES_DB, &db);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法打开数据库 '%s'：%s\n", current_time, LOGLEVEL_ERROR, SCORES_DB, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法打开数据库 '%s'：%s", SCORES_DB, sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
     // 准备SQL语句
+    const char *sql = "DELETE FROM scores WHERE id = ?;";
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法准备SQL语句：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法准备SQL语句：%s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1462,11 +1410,9 @@ int del_score_data(const char *score_id)
     rc = sqlite3_bind_text(stmt, 1, score_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定成绩ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定成绩ID参数失败：%s", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1474,23 +1420,19 @@ int del_score_data(const char *score_id)
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 删除成绩数据失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "删除成绩数据失败：%s", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
     else
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 成功删除成绩数据，成绩ID：%s\n", current_time, LOGLEVEL_INFO, score_id);
+        log_message(LOGLEVEL_INFO, "成功删除成绩数据，成绩ID：%s", score_id);
     }
 
     // 清理和关闭数据库
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-    fclose(log_file);
     return 0;
 }
 
@@ -1502,38 +1444,26 @@ int del_score_data(const char *score_id)
  */
 int del_question_data(const char *question_id)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
-    if (log_file == NULL)
-    {
-        printf("无法打开日志文件：%s\n", strerror(errno));
-        return 1;
-    }
-
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
-    char current_time[20];
-    const char *sql = "DELETE FROM questions WHERE id = ?;";
-
+    
     // 打开数据库
     rc = sqlite3_open(EXAMINATION_DB, &db);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法打开数据库 '%s'：%s\n", current_time, LOGLEVEL_ERROR, EXAMINATION_DB, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法打开数据库 '%s'：%s", EXAMINATION_DB, sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
     // 准备SQL语句
+    const char *sql = "DELETE FROM questions WHERE id = ?;";
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法准备SQL语句：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法准备SQL语句：%s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1541,11 +1471,9 @@ int del_question_data(const char *question_id)
     rc = sqlite3_bind_text(stmt, 1, question_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定问题ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定问题ID参数失败：%s", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1553,23 +1481,19 @@ int del_question_data(const char *question_id)
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 删除问题数据失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "删除问题数据失败：%s", sqlite3_errmsg(db));
         sqlite3_finalize(stmt);
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
     else
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 成功删除问题数据，问题ID：%s\n", current_time, LOGLEVEL_INFO, question_id);
+        log_message(LOGLEVEL_INFO, "成功删除问题数据，问题ID：%s", question_id);
     }
 
     // 清理和关闭数据库
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-    fclose(log_file);
     return 0;
 }
 
@@ -1593,38 +1517,33 @@ int del_question_data(const char *question_id)
  */
 int edit_user_data(const char *user_id, const char *username, const char *hashpass, const char *salt, int role, const char *name, const char *class_name, unsigned int number, const char *belong_to)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
-    if (log_file == NULL)
+    // 数据校验
+    if (strlen(username) < 3 || strlen(username) > 24)
     {
-        printf("无法打开日志文件：%s\n", strerror(errno));
+        log_message(LOGLEVEL_ERROR, "用户名长度不符合要求：%s", username);
         return 1;
     }
 
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
-    char current_time[20];
-    const char *sql = "UPDATE users SET username = ?, hashpass = ?, salt = ?, role = ?, name = ?, class_name = ?, number = ?, belong_to = ? WHERE id = ?;";
 
     // 打开数据库
     rc = sqlite3_open(USER_DB, &db);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法打开数据库 '%s'：%s\n", current_time, LOGLEVEL_ERROR, USER_DB, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法打开数据库 '%s'：%s", USER_DB, sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
     // 准备SQL语句
+    const char *sql = "UPDATE users SET username = ?, hashpass = ?, salt = ?, role = ?, name = ?, class_name = ?, number = ?, belong_to = ? WHERE id = ?;";
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法准备SQL语句：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法准备SQL语句：%s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1632,72 +1551,63 @@ int edit_user_data(const char *user_id, const char *username, const char *hashpa
     rc = sqlite3_bind_text(stmt, 1, username, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定用户名参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定用户名参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_text(stmt, 2, hashpass, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定密码哈希参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定密码哈希参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_text(stmt, 3, salt, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定盐值参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定盐值参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int(stmt, 4, role);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定角色参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定角色参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_text(stmt, 5, name, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定姓名参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定姓名参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_text(stmt, 6, class_name, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定班级名称参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定班级名称参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int64(stmt, 7, number);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定学号/工号参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定学号/工号参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_text(stmt, 8, belong_to, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定归属教师参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定归属教师参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_text(stmt, 9, user_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定用户ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定用户ID参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
@@ -1705,24 +1615,18 @@ int edit_user_data(const char *user_id, const char *username, const char *hashpa
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 更新用户数据失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        fclose(log_file);
-        return 1;
+        log_message(LOGLEVEL_ERROR, "更新用户数据失败：%s", sqlite3_errmsg(db));
+        goto cleanup;
     }
     else
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 成功更新用户数据，用户ID：%s\n", current_time, LOGLEVEL_INFO, user_id);
+        log_message(LOGLEVEL_INFO, "成功更新用户数据，用户ID：%s", user_id);
     }
 
 cleanup:
     // 清理和关闭数据库
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-    fclose(log_file);
     return (rc == SQLITE_DONE) ? 0 : 1;
 }
 
@@ -1739,38 +1643,38 @@ cleanup:
  */
 int edit_exam_data(const char *exam_id, const char *name, int start_time, int end_time, int allow_answer_when_expired, int random_question)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
-    if (log_file == NULL)
+    // 数据校验
+    if (allow_answer_when_expired != 0 && allow_answer_when_expired != 1)
     {
-        printf("无法打开日志文件：%s\n", strerror(errno));
+        log_message(LOGLEVEL_ERROR, "对考试数据库执行插入操作的时候遇到了问题: 逾期作答值非法！%d", allow_answer_when_expired);
+        return 1;
+    }
+    if (random_question != 0 && random_question != 1)
+    {
+        log_message(LOGLEVEL_ERROR, "对考试数据库执行插入操作的时候遇到了问题: 随机问题值非法！%d", random_question);
         return 1;
     }
 
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
-    char current_time[20];
-    const char *sql = "UPDATE examinations SET name = ?, start_time = ?, end_time = ?, allow_answer_when_expired = ?, random_question = ? WHERE id = ?;";
 
     // 打开数据库
     rc = sqlite3_open(EXAMINATION_DB, &db);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法打开数据库 '%s'：%s\n", current_time, LOGLEVEL_ERROR, EXAMINATION_DB, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法打开数据库 '%s'：%s", EXAMINATION_DB, sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
     // 准备SQL语句
+    const char *sql = "UPDATE examinations SET name = ?, start_time = ?, end_time = ?, allow_answer_when_expired = ?, random_question = ? WHERE id = ?;";
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法准备SQL语句：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法准备SQL语句：%s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1778,48 +1682,42 @@ int edit_exam_data(const char *exam_id, const char *name, int start_time, int en
     rc = sqlite3_bind_text(stmt, 1, name, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定考试名称参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定考试名称参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int(stmt, 2, start_time);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定开始时间参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定开始时间参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int(stmt, 3, end_time);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定结束时间参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定结束时间参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int(stmt, 4, allow_answer_when_expired);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定允许逾期作答参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定允许逾期作答参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int(stmt, 5, random_question);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定问题乱序参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定问题乱序参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_text(stmt, 6, exam_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定考试ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定考试ID参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
@@ -1827,24 +1725,18 @@ int edit_exam_data(const char *exam_id, const char *name, int start_time, int en
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 更新考试数据失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        fclose(log_file);
-        return 1;
+        log_message(LOGLEVEL_ERROR, "更新考试数据失败：%s", sqlite3_errmsg(db));
+        goto cleanup;
     }
     else
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 成功更新考试数据，考试ID：%s\n", current_time, LOGLEVEL_INFO, exam_id);
+        log_message(LOGLEVEL_INFO, "成功更新考试数据，考试ID：%s", exam_id);
     }
 
 cleanup:
     // 清理和关闭数据库
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-    fclose(log_file);
     return (rc == SQLITE_DONE) ? 0 : 1;
 }
 
@@ -1860,38 +1752,33 @@ cleanup:
  */
 int edit_score_data(const char *score_id, const char *exam_id, const char *user_id, int score, int expired_flag)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
-    if (log_file == NULL)
+    // 数据校验
+    if (expired_flag != 0 && expired_flag != 1)
     {
-        printf("无法打开日志文件：%s\n", strerror(errno));
+        log_message(LOGLEVEL_ERROR, "对成绩数据库执行插入操作的时候遇到了问题: 逾期作答标记值非法！%d", expired_flag);
         return 1;
     }
 
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
-    char current_time[20];
-    const char *sql = "UPDATE scores SET exam_id = ?, user_id = ?, score = ?, expired_flag = ? WHERE id = ?;";
 
     // 打开数据库
     rc = sqlite3_open(SCORES_DB, &db);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法打开数据库 '%s'：%s\n", current_time, LOGLEVEL_ERROR, SCORES_DB, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法打开数据库 '%s'：%s", SCORES_DB, sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
     // 准备SQL语句
+    const char *sql = "UPDATE scores SET exam_id = ?, user_id = ?, score = ?, expired_flag = ? WHERE id = ?;";
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法准备SQL语句：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法准备SQL语句：%s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -1899,40 +1786,35 @@ int edit_score_data(const char *score_id, const char *exam_id, const char *user_
     rc = sqlite3_bind_text(stmt, 1, exam_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定考试ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定考试ID参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_text(stmt, 2, user_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定用户ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定用户ID参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int(stmt, 3, score);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定成绩参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定成绩参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int(stmt, 4, expired_flag);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定逾期标志参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定逾期标志参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_text(stmt, 5, score_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定成绩ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定成绩ID参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
@@ -1940,24 +1822,18 @@ int edit_score_data(const char *score_id, const char *exam_id, const char *user_
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 更新成绩数据失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        fclose(log_file);
-        return 1;
+        log_message(LOGLEVEL_ERROR, "更新成绩数据失败：%s", sqlite3_errmsg(db));
+        goto cleanup;
     }
     else
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 成功更新成绩数据，成绩ID：%s\n", current_time, LOGLEVEL_INFO, score_id);
+        log_message(LOGLEVEL_INFO, "成功更新成绩数据，成绩ID：%s，用户ID：%s，分数：%d", score_id, user_id, score);
     }
 
 cleanup:
     // 清理和关闭数据库
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-    fclose(log_file);
     return (rc == SQLITE_DONE) ? 0 : 1;
 }
 
@@ -1973,38 +1849,33 @@ cleanup:
  */
 int edit_question_data(const char *question_id, const char *exam_id, int num1, int op, int num2)
 {
-    FILE *log_file = fopen(LOG_FILE, "a"); // 'a' 表示附加模式
-    if (log_file == NULL)
+    // 数据校验
+    if (op != 0 && op != 1 && op != 2 && op != 3)
     {
-        printf("无法打开日志文件：%s\n", strerror(errno));
+        log_message(LOGLEVEL_ERROR, "对问题数据库执行插入操作的时候遇到了问题: 运算符值非法！%d", op);
         return 1;
     }
 
     sqlite3 *db;
     sqlite3_stmt *stmt;
     int rc;
-    char current_time[20];
-    const char *sql = "UPDATE questions SET exam_id = ?, num1 = ?, op = ?, num2 = ? WHERE id = ?;";
 
     // 打开数据库
     rc = sqlite3_open(EXAMINATION_DB, &db);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法打开数据库 '%s'：%s\n", current_time, LOGLEVEL_ERROR, EXAMINATION_DB, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法打开数据库 '%s'：%s", EXAMINATION_DB, sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
     // 准备SQL语句
+    const char *sql = "UPDATE questions SET exam_id = ?, num1 = ?, op = ?, num2 = ? WHERE id = ?;";
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, 0);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 无法准备SQL语句：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "无法准备SQL语句：%s", sqlite3_errmsg(db));
         sqlite3_close(db);
-        fclose(log_file);
         return 1;
     }
 
@@ -2012,40 +1883,35 @@ int edit_question_data(const char *question_id, const char *exam_id, int num1, i
     rc = sqlite3_bind_text(stmt, 1, exam_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定考试ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定考试ID参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int(stmt, 2, num1);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定第一个操作数参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定第一个操作数参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int(stmt, 3, op);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定运算符参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定运算符参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_int(stmt, 4, num2);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定第二个操作数参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定第二个操作数参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
     rc = sqlite3_bind_text(stmt, 5, question_id, -1, SQLITE_STATIC);
     if (rc != SQLITE_OK)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 绑定问题ID参数失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
+        log_message(LOGLEVEL_ERROR, "绑定问题ID参数失败：%s", sqlite3_errmsg(db));
         goto cleanup;
     }
 
@@ -2053,56 +1919,19 @@ int edit_question_data(const char *question_id, const char *exam_id, int num1, i
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 更新问题数据失败：%s\n", current_time, LOGLEVEL_ERROR, sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        sqlite3_close(db);
-        fclose(log_file);
-        return 1;
+        log_message(LOGLEVEL_ERROR, "更新问题数据失败：%s", sqlite3_errmsg(db));
+        goto cleanup;
     }
     else
     {
-        get_current_time(current_time, sizeof(current_time));
-        fprintf(log_file, "%s [%s]: 成功更新问题数据，问题ID：%s\n", current_time, LOGLEVEL_INFO, question_id);
+        log_message(LOGLEVEL_INFO, "成功更新问题数据，问题ID：%s", question_id);
     }
 
 cleanup:
     // 清理和关闭数据库
     sqlite3_finalize(stmt);
     sqlite3_close(db);
-    fclose(log_file);
     return (rc == SQLITE_DONE) ? 0 : 1;
 }
 
 /**************************** 单条数据修改结束 ****************************/
-
-// int main()
-// {
-//     SetConsoleOutputCP(65001);
-//     // 查询单个用户测试
-//     struct Permission permission = {-1, -1, -1, -1, -1, -1, -1, -1};
-//     struct User user = {
-//         "",
-//         "",
-//         -1,
-//         "",
-//         "",
-//         -1,
-//         permission,
-//         ""};
-//     query_user_info("id", "abcdefgh-ijkl-4mno-pqrs-tuvwxyz12345", &user);
-//     log_message(LOGLEVEL_INFO, "id=%s, username=%s, role=%d, name=%s, class_name=%s, number=%u, belong_to=%s", user.id, user.username, user.role, user.name, user.class_name, user.number, user.belong_to);
-//     // 修改单个用户测试
-//     edit_user_data(
-//         "438de9e3-3180-44a3-b205-53514076f334",
-//         "STUDENT",
-//         "660e5568eef2348d55214737232baa7968f4d2a9037904ff20500f4b525d354cd46e65bcc898227aad8539bb13d07d2ca23756ecfa085d948b3e209cdd989af8",
-//         "THISISASALTSTRIN",
-//         0,
-//         "学生",
-//         "班级",
-//         1234567890,
-//         "abcdefgh-ijkl-4mno-pqrs-tuvwxyz12345"
-//     );
-//     return 0;
-// }

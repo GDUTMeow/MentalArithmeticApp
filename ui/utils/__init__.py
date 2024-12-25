@@ -7,7 +7,7 @@ from ctypes import c_char_p, c_int, POINTER, c_float, c_uint
 # dll链接
 APP_LIB = ctypes.CDLL(os.path.join(os.getcwd(), "app.dll"))
 DATABASE_LIB = ctypes.CDLL(os.path.join(os.getcwd(), "database.dll"))
-
+INITIALIZER_LIB = ctypes.CDLL(os.path.join(os.getcwd(), "initializer.dll"))
 
 class Permission(ctypes.Structure):
     """
@@ -415,3 +415,6 @@ APP_LIB.calculate_result.restype = c_float
 
 APP_LIB.judge.argtypes = [c_float, c_float]
 APP_LIB.judge.restype = c_int
+
+INITIALIZER_LIB.initialize.argtypes = []
+INITIALIZER_LIB.initialize.restype = None

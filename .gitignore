@@ -9,3 +9,4 @@ DEBUG*.py
 venv
 *.dll
 __pycache__
+.vscode

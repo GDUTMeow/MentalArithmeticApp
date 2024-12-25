@@ -81,6 +81,12 @@ struct User
     char belong_to[37];           // (仅学生) 属于哪一位老师，填入老师的UUID，可以为空
 };
 
+/**
+ * @brief 获取用户的权限结构
+ *
+ * @param user 要获取权限的用户
+ * @return struct Permission 用户的权限
+ */
 struct Permission get_permission(struct User user);
 
 /**************************** 用户模型和权限部分结束 ****************************/
@@ -108,7 +114,7 @@ struct Question
     struct QuestionData
     {
         int num1; // 第一个操作数
-        int op;     // 运算符
+        int op;   // 运算符
         int num2; // 第二个操作数
     };
     struct QuestionData data;       // 问题的数据部分，类型为上面定义的 QuestionData
@@ -141,9 +147,9 @@ struct SqlResponseQuestion
 {
     char id[37];      // 题目的唯一ID，采用UUID4格式
     char exam_id[37]; // 题目对应的考试ID，仍然是UUID4
-    int num1;       // 第一个操作数
+    int num1;         // 第一个操作数
     int op;           // 运算符，0123对应加减乘除
-    int num2;       // 第二个操作数
+    int num2;         // 第二个操作数
 };
 
 /**
@@ -152,11 +158,11 @@ struct SqlResponseQuestion
  */
 struct SqlResponseScore
 {
-    char id[37];      // 成绩的唯一ID，采用UUID4格式
-    char exam_id[37]; // 成绩对应的考试ID，UUID4
-    char user_id[37]; // 成绩对应的用户ID，UUID4
-    int score;      // 用户的成绩
-    int expired_flag; // 用户是否逾期作答，只允许0（正常作答）和1（逾期作答）
+    char id[37];        // 成绩的唯一ID，采用UUID4格式
+    char exam_id[37];   // 成绩对应的考试ID，UUID4
+    char user_id[37];   // 成绩对应的用户ID，UUID4
+    int score;          // 用户的成绩
+    int expired_flag;   // 用户是否逾期作答，只允许0（正常作答）和1（逾期作答）
 };
 
 /**
@@ -174,7 +180,7 @@ struct SqlResponseUser
     char name[46];       // 用户的真实姓名
     char class_name[31]; // 用户的班级名字
     unsigned int number; // 用户的学号/工号
-    char belong_to[37]; // 用户归属的老师（如果有）
+    char belong_to[37];  // 用户归属的老师（如果有）
 };
 
 /**************************** 数据库结果返回结束 ****************************/
