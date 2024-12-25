@@ -634,14 +634,48 @@ def teacher_modify_exam() -> Response:
     return jsonify(body)
 
 
-@teacher_api_v1.route("/api/v1/teacher/getExamScores/<UUID>")
-def teacher_get_exam_scores(UUID: str):
-    pass
+@teacher_api_v1.route("/api/v1/teacher/getExamScores/<uuid:UUID>")
+def teacher_get_exam_scores(UUID: str) -> Response:
+    try:
+        scores = [
+            score
+            for score in query_scores_info_all(999, key="exam_id", content=str(UUID))
+            if score.id.decode() != ""
+        ]
+        exam = query_exam_info(key="id", content=str(UUID))
+        data = []
+        for score in scores:
+            user = query_user_info(key="id", content=score.user_id.decode())
+            data.append(
+                {
+                    "id": score.id.decode(),
+                    "user_id": score.user_id.decode(),
+                    "score": score.score,
+                    "expired": score.expired_flag,
+                    "number": user.number,
+                    "name": user.name.decode(),
+                }
+            )
+        body = {
+            "success": True,
+            "msg": "获取成绩成功",
+            "metadata": {
+                "id": exam.id.decode(),
+                "name": exam.name.decode(),
+                "start_time": exam.start_time,
+                "end_time": exam.end_time,
+                "allow_answer_when_expired": exam.allow_answer_when_expired,
+                "random_question": exam.allow_answer_when_expired,
+            },
+            "data": data,
+        }
+    except Exception as e:
+        body = {"success": False, "msg": f"获取成绩失败！{str(e)}", "data": []}
+    return jsonify(body)
 
 
 @teacher_api_v1.route("/api/v1/teacher/addStudents", methods=["POST"])
-def teacher_add_students():
-    pass
+def teacher_add_students(): ...
 
 
 @teacher_api_v1.route("/api/v1/teacher/deleteStudents", methods=["POST"])

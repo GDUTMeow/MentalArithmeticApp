@@ -324,10 +324,19 @@
 
         let examData = {
             examName: document.getElementById("exam-add-name").value,
-            startDate: document.getElementById("exam-add-start-date").value + " " + document.getElementById("exam-add-start-time").value,
-            endDate: document.getElementById("exam-add-end-date").value + " " + document.getElementById("exam-add-end-time").value,
-            allowAnswerWhenExpired: document.getElementById("exam-add-allow-answer-when-expired").value,
-            randomQuestions: document.getElementById("exam-add-random-questions").value
+            startDate:
+                document.getElementById("exam-add-start-date").value +
+                " " +
+                document.getElementById("exam-add-start-time").value,
+            endDate:
+                document.getElementById("exam-add-end-date").value +
+                " " +
+                document.getElementById("exam-add-end-time").value,
+            allowAnswerWhenExpired: document.getElementById(
+                "exam-add-allow-answer-when-expired"
+            ).value,
+            randomQuestions: document.getElementById("exam-add-random-questions")
+                .value,
         };
 
         formData.append("examData", encodeURIComponent(JSON.stringify(examData)));
@@ -1086,8 +1095,8 @@
             .then((response) => response.json())
             .then((data) => {
                 if (data.success) {
-                    const exam = data.exam;
-                    const scores = data.scores;
+                    const exam = data.metadata;
+                    const scores = data.data;
 
                     // 填充考试信息
                     document.getElementById("exam-name-title").innerText = exam.name;
@@ -1101,8 +1110,21 @@
                         exam.allow_answer_when_expired ? "是" : "否";
                     document.getElementById("exam-random-question").innerText =
                         exam.random_question ? "是" : "否";
-                    document.getElementById("average-score").innerText =
-                        exam.average_score || "N/A";
+
+                    // 计算平均分并保留两位小数
+                    if (scores.length > 0) {
+                        // 累加所有分数
+                        const totalScore = scores.reduce(
+                            (sum, score) => sum + parseFloat(score.score),
+                            0
+                        );
+                        // 计算平均分
+                        const averageScore = (totalScore / scores.length).toFixed(2);
+                        document.getElementById("show-exam-average-score").innerText = averageScore;
+                    } else {
+                        // 如果没有成绩数据，则显示 "N/A"
+                        document.getElementById("show-exam-average-score").innerText = "N/A";
+                    }
 
                     // 填充成绩表格
                     const scoresTableBody = document.getElementById("scores-table-body");
