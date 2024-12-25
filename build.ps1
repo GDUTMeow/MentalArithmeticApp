@@ -170,6 +170,11 @@ Execute-Step -StepName "编译 Flask 服务器组件" -StepScript {
     --include-data-file=app.dll=app.dll `
     --include-data-file=initializer.dll=initializer.dll `
     --output-dir=build --remove-output --show-progress `
+    --windows-icon-from-ico=ui/static/img/favicon.ico `
+    --windows-company-name=GamerNoTitle `
+    --windows-product-name="口算速算 MentalArithmeticApp" `
+    --windows-file-version=1.0 `
+    --windows-product-version=1.0 `
     --lto=yes --assume-yes-for-downloads ui/app.py
 }
 
