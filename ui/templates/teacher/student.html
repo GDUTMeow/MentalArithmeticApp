@@ -86,10 +86,19 @@
                         <div class="col-12">
                             <span id="student-xlsx-file-name">请选择要导入的学生文件（xlsx格式）</span>
                             <br>
+                            <div class="row mt-2">
+                                <div class="col-md-6 mb-3">
+                                    <a href="{{ url_for('static', filename='uploads/学生模板.xlsx' )}}" download
+                                        class="btn btn-info btn-rounded btn-lg w-100" data-mdb-ripple-color="#ffffff"
+                                        style="padding-left: 10px; padding-right: 10px; width: 95% !important;">
+                                        下载学生导入模板
+                                    </a>
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="col-md-6">
                                     <input type="file" id="student-xlsx-file" style="display: none;" accept=".xlsx">
-                                    <button type="button" class="btn btn-primary btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;" id="student-add-import-file" onclick="importStudentCsvFile()"> 导入CSV </button>
+                                    <button type="button" class="btn btn-primary btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;" id="student-add-import-file" onclick="importStudentXlsxFile()"> 导入CSV </button>
                                 </div>
                                 <div class="col-md-6">
                                     <button type="button" class="btn btn-success btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;" id="student-add-confirm" disabled onclick="addStudents()"> 确定导入 </button>

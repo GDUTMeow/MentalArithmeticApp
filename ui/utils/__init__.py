@@ -2,7 +2,7 @@
 
 import ctypes
 import os
-from ctypes import c_char_p, c_int, POINTER, c_float
+from ctypes import c_char_p, c_int, POINTER, c_float, c_uint
 
 # dll链接
 APP_LIB = ctypes.CDLL(os.path.join(os.getcwd(), "app.dll"))
@@ -356,7 +356,7 @@ DATABASE_LIB.insert_user_data.argtypes = [
     ctypes.c_int,  # role
     ctypes.c_char_p,  # name
     ctypes.c_char_p,  # class_name
-    ctypes.c_int,  # number
+    ctypes.c_uint,  # number
     ctypes.c_char_p,  # belong_to
 ]
 

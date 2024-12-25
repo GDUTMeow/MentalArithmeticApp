@@ -41,14 +41,14 @@ def c_strlen(s):
         code_point = ord(char)
         # 判断是否为中文字符
         if (
-            0x4E00 <= code_point <= 0x9FFF or      # CJK统一汉字
-            0x3400 <= code_point <= 0x4DBF or      # CJK统一汉字扩展A
-            0x20000 <= code_point <= 0x2A6DF or    # CJK统一汉字扩展B
-            0x2A700 <= code_point <= 0x2B73F or    # CJK统一汉字扩展C
-            0x2B740 <= code_point <= 0x2B81F or    # CJK统一汉字扩展D
-            0x2B820 <= code_point <= 0x2CEAF or    # CJK统一汉字扩展E
-            0xF900 <= code_point <= 0xFAFF or      # CJK兼容汉字
-            0x2F800 <= code_point <= 0x2FA1F       # CJK兼容汉字补充
+            0x4E00 <= code_point <= 0x9FFF  # CJK统一汉字
+            or 0x3400 <= code_point <= 0x4DBF  # CJK统一汉字扩展A
+            or 0x20000 <= code_point <= 0x2A6DF  # CJK统一汉字扩展B
+            or 0x2A700 <= code_point <= 0x2B73F  # CJK统一汉字扩展C
+            or 0x2B740 <= code_point <= 0x2B81F  # CJK统一汉字扩展D
+            or 0x2B820 <= code_point <= 0x2CEAF  # CJK统一汉字扩展E
+            or 0xF900 <= code_point <= 0xFAFF  # CJK兼容汉字
+            or 0x2F800 <= code_point <= 0x2FA1F  # CJK兼容汉字补充
         ):
             length += 3
         else:
@@ -153,18 +153,26 @@ def students_xlsx_parser(raw_data: bytes) -> list:
     # 遍历每一行（跳过表头）
     for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         try:
-            number, name, student_class = row[:3]
-            if number > 4294967295 or number <= 0:
-                print(f"第{row_idx}行：学号不符合要求，跳过此行数据 {number}, {name}, {student_class}")
+            number, name, student_class, password = row[:4]
+            if not all([number, name, student_class, password]):
+                break
+            if int(number) > 4294967295 or int(number) <= 0:
+                print(
+                    f"第{row_idx}行：学号不符合要求，跳过此行数据 {number}, {name}, {student_class}, {password}"
+                )
                 continue
             if c_strlen(name) > 45:
-                print(f"第{row_idx}行：姓名长度不符合要求，跳过此行数据 {number}, {name}, {student_class}")
+                print(
+                    f"第{row_idx}行：姓名长度不符合要求，跳过此行数据 {number}, {name}, {student_class}, {password}"
+                )
                 continue
             if c_strlen(student_class) > 30:
-                print(f"第{row_idx}行：班级长度不符合要求，跳过此行数据 {number}, {name}, {student_class}")
+                print(
+                    f"第{row_idx}行：班级长度不符合要求，跳过此行数据 {number}, {name}, {student_class}, {password}"
+                )
                 continue
+            results.append((int(number), name, student_class, password))
         except Exception as e:
             print(f"第{row_idx}行：发生错误: {e}")
             continue
-
     return results

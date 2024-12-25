@@ -41,7 +41,7 @@ cookie_blacklist = (
     []
 )  # 当用户登出的时候，把cookie丢进来，表示已经失效的cookie，因为JWT是没有状态的
 
-key = "GamerNoTitle"
+JWT_KEY = "GamerNoTitle"
 
 # 定义不需要身份验证的路径
 EXEMPT_PATHS = [
@@ -72,7 +72,7 @@ def before_request_func():
 
     if token:
         try:
-            data = jwt.decode(token, key, algorithms=["HS256"])
+            data = jwt.decode(token, JWT_KEY, algorithms=["HS256"])
         except jwt.ExpiredSignatureError:
             # JWT过期
             return redirect("/login")
@@ -93,7 +93,7 @@ def before_request_func():
     else:
         # 没有token，设置一个默认的未登录token并重定向到登录
         response = redirect("/login")
-        cookie = jwt.encode({"role": -1}, key, algorithm="HS256")
+        cookie = jwt.encode({"role": -1}, JWT_KEY, algorithm="HS256")
         cookie_age = 604800  # 7*24*60*60
         response.set_cookie("token", cookie, max_age=cookie_age)
         return response
@@ -114,7 +114,7 @@ def login_handler():
     token = request.cookies.get("token")
     if token:
         try:
-            data = jwt.decode(token, key, algorithms=["HS256"])
+            data = jwt.decode(token, JWT_KEY, algorithms=["HS256"])
             if data.get("role", -1) in [0, 1]:
                 return redirect("/dashboard")
         except jwt.InvalidTokenError:
@@ -127,7 +127,7 @@ def render_dashboard():
     token = request.cookies.get("token")
     if token:
         try:
-            data = jwt.decode(token, key, algorithms=["HS256"])
+            data = jwt.decode(token, JWT_KEY, algorithms=["HS256"])
             if data.get("role", -1) in [0, 1]:
                 if data.get("id", ""):
                     user = query_user_info(key="id", content=data.get("id"))
@@ -209,12 +209,12 @@ def logout_handler():
     response.headers["Content-Type"] = "application/json"
     # 设置一个过期的token或者默认的未登录token
     response.set_cookie(
-        "token", jwt.encode({"role": -1}, key, algorithm="HS256"), max_age=0
+        "token", jwt.encode({"role": -1}, JWT_KEY, algorithm="HS256"), max_age=0
     )
     return response
 
 
 if __name__ == "__main__":
-    print("Student token:", jwt.encode({"role": 0}, key, algorithm="HS256"))
-    print("Teacher token:", jwt.encode({"role": 1}, key, algorithm="HS256"))
+    print("Student token:", jwt.encode({"role": 0}, JWT_KEY, algorithm="HS256"))
+    print("Teacher token:", jwt.encode({"role": 1}, JWT_KEY, algorithm="HS256"))
     app.run(host="0.0.0.0", port=5000, debug=True)

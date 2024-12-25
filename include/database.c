@@ -88,6 +88,7 @@ typedef enum BINDING
 {
     BIND_TYPE_TEXT,
     BIND_TYPE_INT,
+    BIND_TYPE_UINT,
     BIND_TYPE_FLOAT
 } BindType;
 
@@ -1063,6 +1064,9 @@ int insert_data_to_db(const char *db_path, const char *sql, const void **binding
         case BIND_TYPE_FLOAT:
             rc = sqlite3_bind_double(stmt, i + 1, *(const double *)bindings[i]);
             break;
+        case BIND_TYPE_UINT:
+            rc = sqlite3_bind_int64(stmt, i + 1, *(const unsigned int *)bindings[i]);
+            break;
         default:
             // 未知类型
             get_current_time(current_time, sizeof(current_time));
@@ -1243,7 +1247,7 @@ int insert_user_data(const char *user_id, const char *username, const char *hash
 
     // 定义绑定参数
     const void *bindings[] = {user_id, username, hashpass, salt, &role, name, class_name, &number, belong_to};
-    const BindType types[] = {BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_INT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_INT, BIND_TYPE_TEXT};
+    const BindType types[] = {BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_INT, BIND_TYPE_TEXT, BIND_TYPE_TEXT, BIND_TYPE_UINT, BIND_TYPE_TEXT};
 
     // 调用通用插入函数
     return insert_data_to_db(USER_DB, sql, bindings, types, 9);

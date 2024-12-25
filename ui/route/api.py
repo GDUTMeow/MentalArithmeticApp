@@ -675,7 +675,112 @@ def teacher_get_exam_scores(UUID: str) -> Response:
 
 
 @teacher_api_v1.route("/api/v1/teacher/addStudents", methods=["POST"])
-def teacher_add_students(): ...
+def teacher_add_students() -> Response:
+    student = request.form
+    student_file = request.files["xlsxFile"] if "xlsxFile" in request.files else None
+    teacher_cookie = request.cookies
+    token = teacher_cookie.get("token")
+    token_data = jwt.decode(token, JWT_KEY, algorithms=["HS256"])
+    teacher_id = token_data.get("id")
+    if not teacher_id:
+        body = {"success": False, "msg": "未找到教师信息！请重新登录！"}
+        return jsonify(body)
+    if student_file == None:    # 当用户没有上传文件，认为是单个用户添加
+        try:
+            if not all([student.get("studentName"), student.get("className"), student.get("number")]):
+                body = {"success": False, "msg": "请填写完整的学生信息！"}
+                return jsonify(body)
+            if int(student.get("number")) < 0 or int(student.get("number")) > 4294967295:
+                body = {
+                    "success": False,
+                    "msg": "学号不合法！请填写正确的学号！",
+                }
+                return jsonify(body)
+            # 学号去重
+            if query_user_info(key="number", content=student.get("number")):
+                body = {
+                    "success": False,
+                    "msg": "学号与已有数据重复！请检查学号是否填写正确！",
+                }
+                return jsonify(body)
+            user_id = str(uuid.uuid4())
+            salt = generate_salt()
+            password = generate_salt(32)    # 借一下哈希盐函数生成随机密码
+            hashpass = sha512((salt + password).encode()).hexdigest()
+            if insert_user_data(
+                user_id,
+                str(student.get("number")), # 以学号作为学生的登录依据
+                hashpass,
+                salt,
+                0,
+                student.get("studentName"),
+                student.get("className"),
+                int(student.get("number")),
+                teacher_id,
+            ):
+                body = {"success": True, "msg": "添加学生成功！"}
+                
+            else:
+                body = {"success": False, "msg": "添加学生失败！请查看日志文件获取更多信息！"}
+            return jsonify(body)
+        except Exception as e:
+            body = {"success": False, "msg": f"添加学生失败！{e}"}
+            return jsonify(body)
+    else:
+        msg = """导入成功 {success_count} 个学生\n导入失败 {failed_count} 个学生\n{failed_students}"""
+        success_count = 0
+        failed_count = 0
+        failed_students_list = []
+        try:
+            students = students_xlsx_parser(student_file.read())
+            for student in students:    # student的结构为：[number, name, class_name, password]
+                # 学号去重
+                tmp_user = query_user_info(key="number", content=str(student[0]))
+                user = tmp_user if tmp_user.id.decode() != "" else None
+                if user:
+                    del tmp_user, user
+                    failed_students_list.append((student[1], "与已有数据学号重复"))
+                    failed_count += 1
+                    continue
+                del tmp_user, user
+                user_id = str(uuid.uuid4())
+                salt = generate_salt()
+                hashpass = sha512((salt + student[3]).encode()).hexdigest()
+                if insert_user_data(
+                    user_id,
+                    str(student[0]),
+                    hashpass,
+                    salt,
+                    0,
+                    student[1],
+                    student[2],
+                    student[0],
+                    teacher_id,
+                ):
+                    success_count += 1
+                else:
+                    failed_students_list.append((student[1], "未知原因"))
+                    failed_count += 1
+        except Exception as e:
+            body = {"success": False, "msg": f"批量添加学生失败！{e}"}
+            return jsonify(body)
+        # 将 failed_students_list 转换为字符串
+        if failed_students_list:
+            # 使用列表推导式或生成器表达式将每个元组转换为 "姓名: 原因" 的格式
+            failed_students_str = "\n".join(
+                f"{name}：{reason}" for name, reason in failed_students_list
+            )
+        else:
+            failed_students_str = ""
+        body = {
+            "success": True,
+            "msg": msg.format(
+                success_count=success_count,
+                failed_count=failed_count,
+                failed_students=failed_students_str,
+            ),
+        }
+        return jsonify(body)
 
 
 @teacher_api_v1.route("/api/v1/teacher/deleteStudents", methods=["POST"])
@@ -683,7 +788,7 @@ def teacher_delete_students():
     pass
 
 
-@teacher_api_v1.route("/api/v1/teacher/getStudent/<UUID>")
+@teacher_api_v1.route("/api/v1/teacher/getStudent/<uuid:UUID>")
 def teacher_get_student(UUID: str):
     pass
 

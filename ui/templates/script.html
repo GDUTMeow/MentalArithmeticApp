@@ -766,16 +766,14 @@
             .then((response) => response.json()) // 解析响应为 JSON
             .then((data) => {
                 if (data.success) {
-                    alert("学生导入成功。");
-                    // 重新加载学生表格或添加新行
-                    location.reload(); // 简单刷新页面
+                    alert(data.msg);
                 } else {
-                    alert("导入失败：" + data.message);
+                    alert("导入失败：" + data.msg);
                 }
             })
             .catch((error) => {
                 console.error(error);
-                alert("导入失败，请稍后再试。");
+                alert("导入失败：" + data.msg);
             });
     }
 
