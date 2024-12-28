@@ -439,6 +439,15 @@ def student_exam_submit() -> Response:
         user_id = jwt.decode(
             request.cookies.get("token"), JWT_KEY, algorithms=["HS256"]
         ).get("id")
+        # 查询数据库中成绩，避免重复提交刷分
+        scores = [item for item in query_scores_info_all(999, key="exam_id", content=exam_id) if item.id.decode() != ""]
+        for score in scores:
+            if score.user_id.decode() == user_id:
+                body = {
+                    "success": False,
+                    "msg": "你已经提交过了此次考试答卷，请勿重复提交！"
+                }
+                return jsonify(body)
         # 查询考试信息
         exam = query_exam_info(key="id", content=exam_id)
         if seed:

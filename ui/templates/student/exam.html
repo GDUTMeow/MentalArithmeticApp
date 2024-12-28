@@ -222,6 +222,7 @@
             document.getElementById("exam-container").style.display = "none";
             document.getElementById("exam-finish-prompt").style.display = "";
             document.getElementById("exam-result-msg").classList.remove("fade-out");
+            document.getElementById("exam-result-msg").classList.add("fade-in");
 
             if (result.success) {
                 document.getElementById("exam-result-msg").textContent =
@@ -231,6 +232,8 @@
             } else {
                 document.getElementById("exam-result-msg").textContent =
                     "提交失败，请稍后重试。";
+                alert(`提交失败：${result.msg}`)
+                location.reload();
             }
         } catch (error) {
             console.error("Error submitting exam:", error);
