@@ -76,6 +76,9 @@
         const exam_modify_prompt = document.getElementById("exam-modify-prompt");
         exam_modify_prompt.style.paddingTop = height * 0.15 + "px";
 
+        const exam_scores_view = document.getElementById("exam-scores-view");
+        exam_scores_view.style.paddingTop = height * 0.15 + "px";
+
         // 学生成绩列表
         const student_management_teacher = document.getElementById(
             "student-management-teacher"
@@ -1083,7 +1086,8 @@
             return;
         }
         const examId = selectedCheckboxes[0].value;
-
+        const exportBtn = document.getElementById("export-score-btn");
+    
         // 发送请求获取考试成绩
         fetch(`/api/v1/teacher/getExamScores/${examId}`)
             .then((response) => response.json())
@@ -1160,6 +1164,9 @@
                     examScoresView.classList.remove("fade-out"); // 移除淡出动画
                     examScoresView.classList.add("fade-in"); // 添加淡入动画
                     examScoresView.style.display = ""; // 显示成绩查看容器
+
+                    // 更改导出成绩按钮的行为
+                    exportBtn.setAttribute("onclick", `exportExamScores("${examId}")`)
                 } else {
                     alert("无法获取考试成绩，请稍后再试。");
                 }

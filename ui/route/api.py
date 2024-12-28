@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, Response, make_response
+from flask import Blueprint, request, jsonify, Response, make_response, send_file
 from utils.database import (
     query_user_info,
     query_users_info_all,
@@ -28,6 +28,7 @@ from utils.tools import (
     calculate_score,
     questions_xlsx_parse,
     students_xlsx_parser,
+    generate_score_report
 )
 from hashlib import sha512
 from datetime import datetime
@@ -1320,3 +1321,64 @@ def teacher_modify_student() -> Response:
 
     # 返回JSON格式的响应
     return jsonify(body)
+
+@teacher_api_v1.route("/api/v1/teacher/exportScores", methods=["POST"])
+def teacher_export_score() -> Response:
+    exam_id = request.json.get("examId")
+    if not exam_id:
+        body = {
+            "success": False,
+            "msg": "未提供考试ID，无法导出数据！"
+        }
+    exam = query_exam_info(key="id", content=exam_id)
+    if not exam:
+        body = {
+            "success": False,
+            "msg": "无法找到考试信息！"
+        }
+    token_data = jwt.decode(request.cookies.get("token"), JWT_KEY, algorithms=["HS256"])
+    teacher_id = token_data.get("id")
+    if not teacher_id:
+        body = {
+            "success": False,
+            "msg": "无法验证您的身份，请重新登陆！"
+        }
+        return jsonify(body)
+    user = query_user_info(key="id", content=teacher_id) if query_user_info(key="id", content=teacher_id) else None
+    if user:
+        if user.role != 1:
+            body = {
+                "success": False,
+                "msg": "权限不足！"
+            }
+            return jsonify(body)
+    scores = [item for item in query_scores_info_all(999, key="exam_id", content=exam_id) if item.id.decode() != ""]
+    students = [item for item in query_users_info_all(999, key="belong_to", content=teacher_id) if item.id.decode() != ""]
+    student_scores = []
+    for student in students:
+        # 获取学生成绩
+        current_score = -1
+        expired = -1
+        for score in scores:
+            if score.user_id == student.id:
+                current_score = score.score
+                expired = score.expired_flag
+                break
+        student_scores.append(
+            {
+                "id": student.number,
+                "name": student.name.decode(),
+                "score": current_score,
+                "expired": expired
+            }
+        )
+        
+    stream = generate_score_report(student_scores)
+
+    return send_file(
+        stream,
+        as_attachment=True,
+        download_name=f"{exam.name.decode()}考试成绩导出.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    

@@ -49,8 +49,9 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% set exams = exams|default({"data": [{"id": "UUID4", "name": "测试考试", "current_status": -1,
-                        "start_time": 1704628540, "end_time": "1704635143", "allow_answer_when_expired": 1,
+                        {% set exams = exams|default({"data": [{"id": "UUID4", "name":
+                        "测试考试", "current_status": -1, "start_time": 1704628540,
+                        "end_time": "1704635143", "allow_answer_when_expired": 1,
                         "random_question": 0}]}) %} {% for item in exams.data %}
                         <tr>
                             <td>
@@ -59,8 +60,9 @@
                             <th scope="row">{{ loop.index }}</th>
                             <td>{{ item.name }}</td>
                             <td>
-                                {% if item.current_status == 0 %}未开始{% elif item.current_status == 1 %}正在进行{% elif
-                                item.current_status == -1 %}已结束{% else %}未知状态{% endif %}
+                                {% if item.current_status == 0 %}未开始{% elif
+                                item.current_status == 1 %}正在进行{% elif item.current_status
+                                == -1 %}已结束{% else %}未知状态{% endif %}
                             </td>
                             <td>{{ item.start_time }}</td>
                             <td>{{ item.end_time }}</td>
@@ -324,8 +326,11 @@
     <div class="card">
         <div class="card-body">
             <div class="row">
-
                 <div class="col-md-12 text-end mb-3">
+                    <button type="button" class="btn btn-success btn-rounded btn-lg" onclick="exportExamScores()"
+                        id="export-score-btn">
+                        导出成绩
+                    </button>
                     <button type="button" class="btn btn-secondary btn-rounded btn-lg"
                         onclick="returnToExamManagement()">
                         返回
@@ -338,9 +343,10 @@
                         <div class="card-body">
                             <h5 class="card-title" id="exam-name-title">测试考试</h5>
                             <p class="card-text">
-                                开始时间：<span id="exam-start-time">2024-01-01 09:00</span><br> 结束时间：
-                                <span id="exam-end-time">2024-01-01 12:00</span><br> 允许逾期作答：
-                                <span id="exam-allow-expired">是</span><br> 随机问题顺序：
+                                开始时间：<span id="exam-start-time">2024-01-01 09:00</span><br />
+                                结束时间： <span id="exam-end-time">2024-01-01 12:00</span><br />
+                                允许逾期作答： <span id="exam-allow-expired">是</span><br />
+                                随机问题顺序：
                                 <span id="exam-random-question">否</span>
                             </p>
                         </div>
@@ -351,24 +357,27 @@
                 </div>
 
                 <div class="col-md-8">
-                    <div class="table-responsive"
-                        style="box-shadow: 2px 15px -3px rgba(0,0,0,0.07), 0 10px 20px -2px rgba(0,0,0,0.04)">
+                    <div class="table-responsive" style="
+              box-shadow: 2px 15px -3px rgba(0, 0, 0, 0.07),
+                0 10px 20px -2px rgba(0, 0, 0, 0.04);
+            ">
                         <label>成绩筛选（点击下方表头可以进行升序/降序排列）</label>
                         <div class="col-md-12 mb-3">
                             <!-- 姓名筛选 -->
-                            <input type="text" id="filter-name" class="form-control" placeholder="按学生姓名筛选">
+                            <input type="text" id="filter-name" class="form-control" placeholder="按学生姓名筛选" />
                         </div>
-                        
+
                         <div class="col-md-12 mb-3">
                             <!-- 学号筛选 -->
-                            <input type="text" id="filter-id" class="form-control" placeholder="按学号筛选">
+                            <input type="text" id="filter-id" class="form-control" placeholder="按学号筛选" />
                         </div>
-                        
+
                         <div class="col-md-12 mb-3">
                             <!-- 成绩筛选 -->
-                            <input type="number" id="filter-score" class="form-control" placeholder="按成绩筛选（高于此分数的会展示出来）">
+                            <input type="number" id="filter-score" class="form-control"
+                                placeholder="按成绩筛选（高于此分数的会展示出来）" />
                         </div>
-                        
+
                         <div class="col-md-12 mb-3">
                             <!-- 逾期作答筛选 -->
                             <select id="filter-expired" class="form-control">
@@ -387,8 +396,7 @@
                                     <th scope="col" onclick="sortTable(4)">逾期作答</th>
                                 </tr>
                             </thead>
-                            <tbody id="scores-table-body">
-                            </tbody>
+                            <tbody id="scores-table-body"></tbody>
                         </table>
                     </div>
                 </div>
@@ -440,18 +448,25 @@
     }
 
     // 监听输入框变化
-    document.getElementById("filter-name").addEventListener("input", filterScores);
+    document
+        .getElementById("filter-name")
+        .addEventListener("input", filterScores);
     document.getElementById("filter-id").addEventListener("input", filterScores);
-    document.getElementById("filter-score").addEventListener("input", filterScores);
-    document.getElementById("filter-expired").addEventListener("change", filterScores);
+    document
+        .getElementById("filter-score")
+        .addEventListener("input", filterScores);
+    document
+        .getElementById("filter-expired")
+        .addEventListener("change", filterScores);
 </script>
 
 <script>
-    let teacherScoresSortOrder = { // 用于保存每列的排序顺序
+    let teacherScoresSortOrder = {
+        // 用于保存每列的排序顺序
         1: true, // 默认升序
         2: true,
         3: true,
-        4: true
+        4: true,
     };
 
     function sortTable(columnIndex) {
@@ -470,14 +485,97 @@
             }
 
             if (teacherScoresSortOrder[columnIndex]) {
-                return (cellA < cellB) ? -1 : (cellA > cellB) ? 1 : 0;
+                return cellA < cellB ? -1 : cellA > cellB ? 1 : 0;
             } else {
-                return (cellA > cellB) ? -1 : (cellA < cellB) ? 1 : 0;
+                return cellA > cellB ? -1 : cellA < cellB ? 1 : 0;
             }
         });
 
-        rows.forEach(row => tableBody.appendChild(row));
+        rows.forEach((row) => tableBody.appendChild(row));
 
         teacherScoresSortOrder[columnIndex] = !teacherScoresSortOrder[columnIndex];
+    }
+</script>
+
+<script>
+    async function exportExamScores(examId) {
+        try {
+            if (!examId) {
+                alert("未找到考试ID，请重试。");
+                return;
+            }
+
+            const response = await fetch("/api/v1/teacher/exportScores", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ examId: examId }),
+                credentials: "include", // 包含 cookies（如 JWT token）
+            });
+
+            if (!response.ok) {
+                // 尝试解析错误消息
+                let errorMsg = "导出失败，请稍后再试。";
+                try {
+                    const errorData = await response.json();
+                    if (errorData && errorData.msg) {
+                        errorMsg = errorData.msg;
+                    }
+                } catch (e) {
+                    // 无法解析为 JSON，使用默认错误消息
+                }
+                throw new Error(errorMsg);
+            }
+
+            const disposition = response.headers.get("Content-Disposition");
+            let filename = "student_scores.xlsx"; // 默认文件名
+            if (disposition && disposition.indexOf("attachment") !== -1) {
+                filename = getFilenameFromDisposition(disposition);
+            }
+
+            const blob = await response.blob();
+
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+
+            document.body.appendChild(a);
+            a.click();
+
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("导出失败:", error);
+            alert(`导出成绩失败：${error.message}`);
+        }
+    }
+
+    function getFilenameFromDisposition(disposition) {
+        let filename = null;
+
+        if (disposition && disposition.indexOf("attachment") !== -1) {
+            const filenameMatch = disposition.match(/filename\*=UTF-8''([^;]+)/);
+            if (filenameMatch && filenameMatch[1]) {
+                try {
+                    filename = decodeURIComponent(filenameMatch[1]);
+                } catch (e) {
+                    // 解码失败，可能是不合法的 URL 编码，此时 fallback 到旧的方式
+                    filenameMatch = disposition.match(/filename="([^;"]+)"/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        filename = filenameMatch[1];
+                    }
+                }
+            } else {
+                filenameMatch = disposition.match(/filename="([^;"]+)"/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1];
+                }
+            }
+        }
+
+        return filename;
     }
 </script>

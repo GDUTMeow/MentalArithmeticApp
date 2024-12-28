@@ -3,6 +3,7 @@ import random
 import openpyxl
 from io import BytesIO
 from .app import judge, calculate_result
+from typing import List, Dict
 
 
 def generate_salt(length: int = 16) -> str:
@@ -178,3 +179,66 @@ def students_xlsx_parser(raw_data: bytes) -> list:
             print(f"第{row_idx}行：发生错误: {e}")
             continue
     return results
+
+def generate_score_report(student_score_list: List[Dict]) -> BytesIO:
+    """
+    生成学生成绩报告的Excel二进制数据流。
+
+    此函数接收一个包含学生成绩信息的列表，并将其导出为Excel格式的二进制数据流。
+    Excel文件包含四列：学号、姓名、分数、逾期作答。
+
+    参数:
+        student_score_list (List[Dict]): 
+            每个字典包含以下键：
+                - "id" (str): 学生的学号
+                - "name" (str): 学生的姓名
+                - "score" (int): 学生的分数，未作答时为-1
+                - "expired" (int): 逾期作答标记，1表示逾期，0表示未逾期，-1表示未作答
+
+    返回:
+        BytesIO: 包含生成的Excel文件数据的二进制流
+    """
+    
+    # 创建一个新的Excel工作簿
+    wb = openpyxl.Workbook()
+    
+    # 获取活动的工作表
+    ws = wb.active
+    ws.title = "学生成绩"  # 设置工作表名称为“学生成绩”
+
+    # 定义表头并添加到工作表的第一行
+    headers = ["学号", "姓名", "分数", "逾期作答"]
+    ws.append(headers)
+
+    # 遍历每个学生的成绩信息，并根据逻辑处理后添加到工作表
+    for student in student_score_list:
+        number = student["id"]         # 学号
+        name = student["name"]         # 姓名
+        score = student["score"]       # 分数
+        expired = student["expired"]   # 逾期作答标记
+
+        # 根据分数和逾期标记处理显示内容
+        if score == -1:
+            score_display = "未作答"          # 分数为-1时显示“未作答”
+            expired_display = "未作答"        # 同时逾期标记也显示“未作答”
+        else:
+            score_display = score            # 存在分数时显示实际分数
+            if expired == 1:
+                expired_display = "是"        # 逾期作答标记为1时显示“是”
+            elif expired == 0:
+                expired_display = "否"        # 逾期作答标记为0时显示“否”
+            else:
+                expired_display = "未知"      # 处理其他可能的情况
+
+        # 创建当前行的数据列表
+        row = [number, name, score_display, expired_display]
+        
+        # 将当前行的数据添加到工作表中
+        ws.append(row)
+
+    # 将工作簿保存到二进制流中
+    stream = BytesIO()
+    wb.save(stream)          # 将Excel文件写入内存中的BytesIO对象
+    stream.seek(0)           # 将指针移动到流的开头，以便后续读取
+
+    return stream            # 返回包含Excel数据的二进制流
