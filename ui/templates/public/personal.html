@@ -9,12 +9,11 @@
                         <div class="card-header">个人信息</div>
                         <div class="card-body">
                             <h5 class="card-title">
-                                {{ user.name if user is defined else "Pesy Wu" }}
+                                {{ user.name if user is defined and user.name else "Unknown" }}
                             </h5>
                             <p class="card-text">
-                                用户名：{{ user.username if user is defined else "GamerNoTitle"
-                                }}<br />
-                                学号：{{ user.number if user is defined else "44666814" }}<br />
+                                用户名：{{ user.username if user is defined and user.username else "<N/A>"}}<br />
+                                学号：{{ user.number if user is defined else "<N/A>" }}<br />
                                 {% if user.class_name %} 
                                 班级：{{ user.class_name }}<br />
                                 {% endif %} 

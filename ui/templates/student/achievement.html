@@ -7,9 +7,9 @@
                     <div class="card text-center">
                         <div class="card-header">我的考试成绩</div>
                         <div class="card-body">
-                            <h5 class="card-title">{{ user and user.name or "Pesy Wu" }}</h5>
+                            <h5 class="card-title">{{ user and user.name or "Unknown" }}</h5>
                             <p class="card-text">
-                                学号：{{ user and user.number or "44666814" }}<br />
+                                学号：{{ user and user.number or "<N/A>" }}<br />
                                 共 {{ (score and score.data|length)| default(3) }} 场考试
                             </p>
                         </div>

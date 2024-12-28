@@ -447,7 +447,7 @@
 </script>
 
 <script>
-    let sortOrder = { // 用于保存每列的排序顺序
+    let teacherScoresSortOrder = { // 用于保存每列的排序顺序
         1: true, // 默认升序
         2: true,
         3: true,
@@ -469,7 +469,7 @@
                 cellB = parseFloat(cellB);
             }
 
-            if (sortOrder[columnIndex]) {
+            if (teacherScoresSortOrder[columnIndex]) {
                 return (cellA < cellB) ? -1 : (cellA > cellB) ? 1 : 0;
             } else {
                 return (cellA > cellB) ? -1 : (cellA < cellB) ? 1 : 0;
@@ -478,6 +478,6 @@
 
         rows.forEach(row => tableBody.appendChild(row));
 
-        sortOrder[columnIndex] = !sortOrder[columnIndex];
+        teacherScoresSortOrder[columnIndex] = !teacherScoresSortOrder[columnIndex];
     }
 </script>
