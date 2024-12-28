@@ -364,23 +364,23 @@
                         <label>成绩筛选（点击下方表头可以进行升序/降序排列）</label>
                         <div class="col-md-12 mb-3">
                             <!-- 姓名筛选 -->
-                            <input type="text" id="filter-name" class="form-control" placeholder="按学生姓名筛选" />
+                            <input type="text" id="exam-filter-name" class="form-control" placeholder="按学生姓名筛选" />
                         </div>
 
                         <div class="col-md-12 mb-3">
                             <!-- 学号筛选 -->
-                            <input type="text" id="filter-id" class="form-control" placeholder="按学号筛选" />
+                            <input type="text" id="exam-filter-id" class="form-control" placeholder="按学号筛选" />
                         </div>
 
                         <div class="col-md-12 mb-3">
                             <!-- 成绩筛选 -->
-                            <input type="number" id="filter-score" class="form-control"
+                            <input type="number" id="exam-filter-score" class="form-control"
                                 placeholder="按成绩筛选（高于此分数的会展示出来）" />
                         </div>
 
                         <div class="col-md-12 mb-3">
                             <!-- 逾期作答筛选 -->
-                            <select id="filter-expired" class="form-control">
+                            <select id="exam-filter-expired" class="form-control">
                                 <option value="">选择是否逾期</option>
                                 <option value="是">是</option>
                                 <option value="否">否</option>
@@ -408,12 +408,12 @@
 <script>
     // 过滤数据函数
     function filterScores() {
-        let nameFilter = document.getElementById("filter-name").value.toLowerCase();
-        let idFilter = document.getElementById("filter-id").value.toLowerCase();
-        let scoreFilter = document.getElementById("filter-score").value;
-        let expiredFilter = document.getElementById("filter-expired").value;
+        let nameFilter = document.getElementById("exam-filter-name").value.toLowerCase();
+        let idFilter = document.getElementById("exam-filter-id").value.toLowerCase();
+        let scoreFilter = document.getElementById("exam-filter-score").value;
+        let expiredFilter = document.getElementById("exam-filter-expired").value;
 
-        let tableBody = document.getElementById("scores-table-body");
+        let tableBody = document.getElementById("exam-scores-table-body");
         let rows = tableBody.getElementsByTagName("tr");
 
         for (let i = 0; i < rows.length; i++) {
@@ -449,14 +449,14 @@
 
     // 监听输入框变化
     document
-        .getElementById("filter-name")
+        .getElementById("exam-filter-name")
         .addEventListener("input", filterScores);
-    document.getElementById("filter-id").addEventListener("input", filterScores);
+    document.getElementById("exam-filter-id").addEventListener("input", filterScores);
     document
-        .getElementById("filter-score")
+        .getElementById("exam-filter-score")
         .addEventListener("input", filterScores);
     document
-        .getElementById("filter-expired")
+        .getElementById("exam-filter-expired")
         .addEventListener("change", filterScores);
 </script>
 

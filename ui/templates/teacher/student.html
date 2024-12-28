@@ -62,23 +62,21 @@
                         <h2 class="h1-responsive font-weight-bold text-center my-4">添加学生</h2>
                         <!--Section description-->
                         <p class="text-center w-responsive mx-auto mb-5">请在下方输入学生的相关信息并导入CSV文件</p>
-                        <div class="form-outline mb-4">
+                        <div class="form-floating mb-4">
                             <input type="text" id="student-name" class="form-control" />
-                            <hr>
+                            
                             <label class="form-label" for="student-name">学生姓名</label>
                         </div>
                         <div class="row">
                             <div class="col-6">
-                                <div class="form-outline mb-4">
+                                <div class="form-floating mb-4">
                                     <input type="text" id="student-class-name" class="form-control" />
-                                    <hr>
                                     <label class="form-label" for="student-class-name">班级名称</label>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="form-outline mb-4">
+                                <div class="form-floating mb-4">
                                     <input type="number" id="student-number" class="form-control" />
-                                    <hr>
                                     <label class="form-label" for="student-number">学号</label>
                                 </div>
                             </div>
@@ -129,23 +127,24 @@
                         <h2 class="h1-responsive font-weight-bold text-center my-4">修改学生</h2>
                         <!--Section description-->
                         <p class="text-center w-responsive mx-auto mb-5">请在下方修改学生的相关信息</p>
-                        <div class="form-outline mb-4">
+                        <div class="form-floating mb-4">
                             <input type="text" id="modify-student-name" class="form-control" />
-                            <hr>
+                            
                             <label class="form-label" for="modify-student-name">学生姓名</label>
                         </div>
                         <div class="row">
                             <div class="col-6">
-                                <div class="form-outline mb-4">
+                                <div class="mb-4">
+                                    <div class="form-floating">
                                     <input type="text" id="modify-student-class-name" class="form-control" />
-                                    <hr>
                                     <label class="form-label" for="modify-student-class-name">班级名称</label>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="form-outline mb-4">
+                                <div class="form-floating mb-4">
                                     <input type="number" id="modify-student-number" class="form-control" />
-                                    <hr>
+                                    
                                     <label class="form-label" for="modify-student-number">学号</label>
                                 </div>
                             </div>
@@ -158,14 +157,14 @@
                         </div>
                         <!-- 新增密码输入框，初始隐藏 -->
                         <div id="password-fields" style="display: none;">
-                            <div class="form-outline mb-4">
+                            <div class="form-floating mb-4">
                                 <input type="password" id="new-password" class="form-control" />
-                                <hr>
+                                
                                 <label class="form-label" for="new-password">新密码</label>
                             </div>
-                            <div class="form-outline mb-4">
+                            <div class="form-floating mb-4">
                                 <input type="password" id="confirm-password" class="form-control" />
-                                <hr>
+                                
                                 <label class="form-label" for="confirm-password">确认密码</label>
                             </div>
                         </div>
