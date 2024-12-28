@@ -65,8 +65,7 @@ def calculate_score(question_list: list, user_answer_list: list) -> int:
     @return int 得分
     """
     # 计算总分
-    total_score = 0
-    score_per_question = 100 / len(question_list)
+    right_count = 0
     for question, answer in zip(question_list, user_answer_list):
         if judge(
             calculate_result(
@@ -74,9 +73,10 @@ def calculate_score(question_list: list, user_answer_list: list) -> int:
             ),
             answer,
         ):
-            total_score += score_per_question
-
-    return int(total_score)  # 分数只能是整数，否则数据库存储方面存储后会出问题
+            right_count += 1
+    score = right_count/len(question_list) * 100
+    
+    return int(score)  # 分数只能是整数，否则数据库存储方面存储后会出问题
 
 
 def questions_xlsx_parse(raw_data: bytes) -> list:

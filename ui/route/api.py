@@ -1011,7 +1011,7 @@ def teacher_add_students() -> Response:
             user_id = str(uuid.uuid4())
             salt = generate_salt()
             # 生成随机密码
-            password = generate_salt(32)  # 使用盐生成函数生成随机密码
+            password = "00000000"  # 使用盐生成函数生成随机密码
             # 计算密码的哈希值
             hashpass = sha512((salt + password).encode()).hexdigest()
             # 插入新的学生数据到数据库

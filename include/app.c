@@ -290,8 +290,6 @@ void free_question_list(struct Question *head_ptr)
     log_message(LOGLEVEL_INFO, "问题链表内存已释放");
 }
 
-/**************************** 考试问题生成模块部分结束 ****************************/
-
 /**
  * @brief 打印问题链表
  *
@@ -335,3 +333,5 @@ void print_question_list(struct Question *head)
     }
     log_message(LOGLEVEL_INFO, "问题链表打印完成");
 }
+
+/**************************** 考试问题生成模块部分结束 ****************************/
