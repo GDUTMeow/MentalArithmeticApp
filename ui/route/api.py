@@ -806,9 +806,9 @@ def teacher_modify_exam() -> Response:
                 # 或者数据库中的考试的开始时间大于当前考试的结束时间
                 # 类似于 ====(exam1)===========(current_exam)=========(exam2)====> 的时间线
                 #                 ↑ endTime   ↑ startTime  ↑ endTime ↑ startTime
-            if not (
+            if (not (
                 exam.end_time < current_exam_start_time_from_front or exam.start_time > current_exam_end_time_from_front
-            ):
+            )) and exam.id.decode() != exam_id:
                 # 如果存在时间重叠，返回错误消息
                 body = {
                     "success": False,
