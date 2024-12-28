@@ -16,6 +16,7 @@ from utils.database import (
     edit_exam_data,
     delete_question_data,
     delete_user_data,
+    delete_score_data
 )
 from utils.app import (
     generate_question_list,
@@ -753,6 +754,13 @@ def teacher_delete_exam() -> Response:
         for exam_id in exams_to_delete:
             # 遍历每个考试ID并执行删除操作
             delete_exam_data(exam_id)
+            scores_to_delete = [item for item in query_scores_info_all(999, key="exam_id", content = exam_id) if item.id.decode() != ""]
+            for score in scores_to_delete:
+                delete_score_data(score.id.decode())
+            questions_to_delete = [item for item in query_questions_info_all(999, key="exam_id", content= exam_id)]
+            for question in questions_to_delete:
+                delete_question_data(question.id.decode())
+            
         # 如果所有删除操作成功，构建成功的响应体
         body = {"success": True, "msg": "删除考试成功！"}
         return jsonify(body)
@@ -1124,8 +1132,13 @@ def teacher_delete_students() -> Response:
         for student_id in students_to_delete:
             if not delete_user_data(student_id):
                 # 如果删除操作失败，抛出异常并包含失败的学生ID
-                raise Exception(f"{student_id} 删除失败！")
-
+                raise Exception(f"学生 {student_id} 删除失败！")
+        students_scores_to_delete = [item for item in query_scores_info_all(999, key="user_id", content=student_id) if item.id.decode() != ""]
+        for score in students_scores_to_delete:
+            if not delete_score_data(score.id.decode()):
+                # 如果删除操作失败，抛出异常并包含失败的成绩
+                raise Exception(f"成绩 {score.id.decode()} 删除失败！")
+            
         # 如果所有删除操作成功，构建成功的响应体
         body = {"success": True, "msg": "删除学生成功！"}
         return jsonify(body)
