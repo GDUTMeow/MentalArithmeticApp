@@ -132,6 +132,14 @@ def general_register() -> Response:
                 "msg": f"当前使用的用户名 {username} 已经被使用了！",
             }
         else:
+                        # 检查用户名是否仅包含字母和数字
+            for i in username:
+                if i not in (string.ascii_letters + string.digits):
+                    body = {
+                        "success": False,
+                        "msg": f"用户名 {username} 中包含非法字符 \"{i}\" 😦",
+                    }
+                    return make_response(body)
             # 验证用户名长度是否符合要求（3到24个字符）
             if len(username) < 3:
                 body = {"success": False, "msg": f"用户名 {username} 太短啦 😣"}
@@ -139,15 +147,6 @@ def general_register() -> Response:
             if len(username) > 24:
                 body = {"success": False, "msg": f"用户名 {username} 太长啦 😣"}
                 return make_response(body)
-
-            # 检查用户名是否仅包含字母和数字
-            for i in username:
-                if i not in (string.ascii_letters + string.digits):
-                    body = {
-                        "success": False,
-                        "msg": f"用户名 {username} 中包含非法字符 {i} 😦",
-                    }
-                    return make_response(body)
 
             # 验证工号是否在合法范围内
             if int(number) > 4294967295:
@@ -1244,7 +1243,8 @@ def teacher_modify_student() -> Response:
     # 获取请求中的表单数据
     data = request.form
     student_id = data.get("studentId")  # 获取要修改的学生ID
-
+    if not all([data.get("studentId"), data.get("name"), data.get("className"), data.get("number"), data.get("resetPassword")]):
+        body = {"success": False, "msg": "请填写完整的学生信息！"}
     # 查询当前学生的信息
     student_records = query_users_info_all(1, key="id", content=student_id)
     if not student_records:
@@ -1255,11 +1255,6 @@ def teacher_modify_student() -> Response:
     student = student_records[0]  # 获取查询到的学生记录
 
     try:
-        # 检查是否提供了所有必填字段
-        if not all([data.get("name"), data.get("className"), data.get("number")]):
-            body = {"success": False, "msg": "请填写完整的学生信息！"}
-            return jsonify(body)
-
         # 验证学号是否在合法范围内
         student_number = int(data.get("number"))
         if student_number < 0 or student_number > 4294967295:
@@ -1277,23 +1272,14 @@ def teacher_modify_student() -> Response:
         )
 
         # 检查新的学号是否已存在且不属于当前学生
-        if data.get("number"):
-            existing_user = (
-                query_user_info(key="number", content=data.get("number"))
-                if query_exam_info(key="number", content=data.get("number"))
-                and query_exam_info(
-                    key="number", content=data.get("number")
-                ).id.decode()
-                != ""
-                else None
-            )
-            if existing_user:
-                if existing_user.id.decode() != student_id:
-                    body = {
-                        "success": False,
-                        "msg": "学号与已有数据重复！请检查学号是否填写正确！",
-                    }
-                    return jsonify(body)
+        existing_user = [item for item in query_users_info_all(999, key="number", content=data.get("number")) if item.id.decode() != "" and item.id.decode() != student_id]
+        if existing_user:
+            if existing_user[0].id.decode() != student_id:
+                body = {
+                    "success": False,
+                    "msg": "学号与已有数据重复！请检查学号是否填写正确！",
+                }
+                return jsonify(body)
 
         # 计算新的哈希密码，如果需要重置密码
         new_hashpass = (
