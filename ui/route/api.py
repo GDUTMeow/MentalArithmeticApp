@@ -827,7 +827,7 @@ def teacher_modify_exam() -> Response:
         .timestamp()
     )
     if current_exam_start_time_from_front >= current_exam_end_time_from_front:
-        body = {"success": False, "msg": "考试的开始时间不能大于结束时间！"}
+        body = {"success": False, "msg": f"考试的开始时间（{current_exam_start_time_from_front}）不能大于结束时间（{current_exam_end_time_from_front}）！"}
         return jsonify(body)
     # 查询当前考试的信息
     current_exam = query_exam_info(key="id", content=exam_id)
