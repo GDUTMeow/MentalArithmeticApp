@@ -4,6 +4,7 @@ import argparse
 import json
 import jwt
 import logging
+import webbrowser
 from logging.handlers import RotatingFileHandler
 from flask import (
     Flask,
@@ -491,7 +492,7 @@ if __name__ == "__main__":
 
     # 初始化应用
     initialize_application()
-
+    webbrowser.open(f"http://{args.host}:{args.port}" if args.host != "0.0.0.0" else f"http://127.0.0.1:{args.port}")
     # 运行 Flask 应用，禁用重新加载器以防止日志重复
     # app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=False)
     app.run(host=args.host, port=args.port, debug=args.debug, use_reloader=True)
