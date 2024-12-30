@@ -16,7 +16,7 @@ from utils.database import (
     edit_exam_data,
     delete_question_data,
     delete_user_data,
-    delete_score_data
+    delete_score_data,
 )
 from utils.app import (
     generate_question_list,
@@ -28,7 +28,9 @@ from utils.tools import (
     calculate_score,
     questions_xlsx_parse,
     students_xlsx_parser,
-    generate_score_report
+    generate_score_report,
+    c_strlen,
+    is_chinese,
 )
 from hashlib import sha512
 from datetime import datetime
@@ -122,7 +124,7 @@ def general_register() -> Response:
     number: int = int(data.get("number", "0"))
     username: str = data.get("username", "")
     password: str = data.get("password", "")
-    
+
     # 检查所有必填字段是否提供
     if name and number and username and password:
         # 查询数据库中是否已存在该用户名的用户
@@ -133,12 +135,12 @@ def general_register() -> Response:
                 "msg": f"当前使用的用户名 {username} 已经被使用了！",
             }
         else:
-                        # 检查用户名是否仅包含字母和数字
+            # 检查用户名是否仅包含字母和数字
             for i in username:
                 if i not in (string.ascii_letters + string.digits):
                     body = {
                         "success": False,
-                        "msg": f"用户名 {username} 中包含非法字符 \"{i}\" 😦",
+                        "msg": f'用户名 {username} 中包含非法字符 "{i}" 😦',
                     }
                     return make_response(body)
             # 验证用户名长度是否符合要求（3到24个字符）
@@ -441,12 +443,16 @@ def student_exam_submit() -> Response:
             request.cookies.get("token"), JWT_KEY, algorithms=["HS256"]
         ).get("id")
         # 查询数据库中成绩，避免重复提交刷分
-        scores = [item for item in query_scores_info_all(999, key="exam_id", content=exam_id) if item.id.decode() != ""]
+        scores = [
+            item
+            for item in query_scores_info_all(999, key="exam_id", content=exam_id)
+            if item.id.decode() != ""
+        ]
         for score in scores:
             if score.user_id.decode() == user_id:
                 body = {
                     "success": False,
-                    "msg": "你已经提交过了此次考试答卷，请勿重复提交！"
+                    "msg": "你已经提交过了此次考试答卷，请勿重复提交！",
                 }
                 return jsonify(body)
         # 查询考试信息
@@ -642,7 +648,7 @@ def teacher_add_exam() -> Response:
     ):
         body = {
             "success": False,
-            "msg": f"考试的开始时间（{current_exam.get('startDate')}）不能大于结束时间（{current_exam.get('endDate')}）"
+            "msg": f"考试的开始时间（{current_exam.get('startDate')}）不能大于结束时间（{current_exam.get('endDate')}）",
         }
         return jsonify(body)
     # 查询所有考试信息，限制返回数量为999条
@@ -763,13 +769,22 @@ def teacher_delete_exam() -> Response:
         for exam_id in exams_to_delete:
             # 遍历每个考试ID并执行删除操作
             delete_exam_data(exam_id)
-            scores_to_delete = [item for item in query_scores_info_all(999, key="exam_id", content = exam_id) if item.id.decode() != ""]
+            scores_to_delete = [
+                item
+                for item in query_scores_info_all(999, key="exam_id", content=exam_id)
+                if item.id.decode() != ""
+            ]
             for score in scores_to_delete:
                 delete_score_data(score.id.decode())
-            questions_to_delete = [item for item in query_questions_info_all(999, key="exam_id", content= exam_id)]
+            questions_to_delete = [
+                item
+                for item in query_questions_info_all(
+                    999, key="exam_id", content=exam_id
+                )
+            ]
             for question in questions_to_delete:
                 delete_question_data(question.id.decode())
-            
+
         # 如果所有删除操作成功，构建成功的响应体
         body = {"success": True, "msg": "删除考试成功！"}
         return jsonify(body)
@@ -790,11 +805,17 @@ def teacher_modify_exam() -> Response:
     # 获取请求中的表单数据
     data = request.form
     exam_id = data.get("examId")  # 获取要修改的考试ID
-    if not all([data.get("examId"), data.get("examName"), data.get("startDate"), data.get("endDate"), data.get("allowAnswerWhenExpired"), data.get("randomQuesitons")]):
-        body = {
-            "success": False,
-            "msg": "传入的修改信息不能为空！"
-        }
+    if not all(
+        [
+            data.get("examId"),
+            data.get("examName"),
+            data.get("startDate"),
+            data.get("endDate"),
+            data.get("allowAnswerWhenExpired"),
+            data.get("randomQuesitons"),
+        ]
+    ):
+        body = {"success": False, "msg": "传入的修改信息不能为空！"}
     current_exam_start_time_from_front = int(
         datetime.strptime(data["startDate"], "%Y-%m-%d %H:%M")
         .replace(second=0)
@@ -806,10 +827,7 @@ def teacher_modify_exam() -> Response:
         .timestamp()
     )
     if current_exam_start_time_from_front >= current_exam_end_time_from_front:
-        body = {
-            "success": False,
-            "msg": "考试的开始时间不能大于结束时间！"
-        }
+        body = {"success": False, "msg": "考试的开始时间不能大于结束时间！"}
         return jsonify(body)
     # 查询当前考试的信息
     current_exam = query_exam_info(key="id", content=exam_id)
@@ -818,14 +836,17 @@ def teacher_modify_exam() -> Response:
         # 查询所有考试信息，限制返回数量为999条
         all_exams = query_exams_info_all(999)
         for exam in all_exams:
-                # 检查修改后的考试时间是否与其他考试时间重叠
-                # 当数据库中的考试的结束时间小于当前考试的开始时间
-                # 或者数据库中的考试的开始时间大于当前考试的结束时间
-                # 类似于 ====(exam1)===========(current_exam)=========(exam2)====> 的时间线
-                #                 ↑ endTime   ↑ startTime  ↑ endTime ↑ startTime
-            if (not (
-                exam.end_time < current_exam_start_time_from_front or exam.start_time > current_exam_end_time_from_front
-            )) and exam.id.decode() != exam_id:
+            # 检查修改后的考试时间是否与其他考试时间重叠
+            # 当数据库中的考试的结束时间小于当前考试的开始时间
+            # 或者数据库中的考试的开始时间大于当前考试的结束时间
+            # 类似于 ====(exam1)===========(current_exam)=========(exam2)====> 的时间线
+            #                 ↑ endTime   ↑ startTime  ↑ endTime ↑ startTime
+            if (
+                not (
+                    exam.end_time < current_exam_start_time_from_front
+                    or exam.start_time > current_exam_end_time_from_front
+                )
+            ) and exam.id.decode() != exam_id:
                 # 如果存在时间重叠，返回错误消息
                 body = {
                     "success": False,
@@ -1018,17 +1039,42 @@ def teacher_add_students() -> Response:
                 }
                 return jsonify(body)
             # 检查学号是否已存在，避免重复
-            if query_user_info(key="number", content=student.get("number")).id.decode() != "":
+            if (
+                query_user_info(key="number", content=student.get("number")).id.decode()
+                != ""
+            ):
                 body = {
                     "success": False,
                     "msg": "学号与已有数据重复！请检查学号是否填写正确！",
                 }
                 return jsonify(body)
+            # 检验名字的字符数组长度是否大于45
+            if c_strlen(student.get("studentName")) > 45:
+                body = {
+                    "success": False,
+                    "msg": f"学生名字长度过长（{c_strlen(student.get('studentName'))} 字符），请检查名字是否错误！",
+                }
+                return jsonify(body)
+            # 校验名字是否为ascii.printable或者中文
+            for char in student.get("studentName"):
+                if not (
+                    char in string.ascii_letters or is_chinese(char) or char == "·" or char == " "
+                ):
+                    body = {
+                        "success": False,
+                        "msg": f'学生名字中的 "{char}" 字符不合法！',
+                    }
+                    return jsonify(body)
+            # 校验班级长度是否合法
+            if c_strlen(student.get("className")) > 30:
+                body = {
+                    "success": False,
+                    "msg": f"班级名称的长度过长（{c_strlen(student.get('className'))} 字符），请检查输入！",
+                }
             # 生成新的用户ID和盐值
             user_id = str(uuid.uuid4())
             salt = generate_salt()
-            # 生成随机密码
-            password = "00000000"  # 使用盐生成函数生成随机密码
+            password = "00000000"  # 固定新用户密码为00000000
             # 计算密码的哈希值
             hashpass = sha512((salt + password).encode()).hexdigest()
             # 插入新的学生数据到数据库
@@ -1068,6 +1114,41 @@ def teacher_add_students() -> Response:
             for (
                 student
             ) in students:  # 每个学生的结构为：[number, name, class_name, password]
+                if student[0] > 4294967295 or student[0] <= 0:
+                    failed_students_list.append(
+                        (student[1], f"学号 {student[0]} 不符合要求。")
+                    )
+                    failed_count += 1
+                    continue
+                if c_strlen(student[1]) > 45:
+                    failed_students_list.append(
+                        (student[1], f"姓名 {student[1]} 的长度不符合要求。")
+                    )
+                    failed_count += 1
+                    continue
+                if c_strlen(student[2]) > 30:
+                    failed_students_list.append(
+                        (student[1], f"班级 {student[2]} 的长度不符合要求。")
+                    )
+                    failed_count += 1
+                    continue
+                # 检验名字合法性
+                for char in student[1]:
+                    char_failed = False
+                    if not (
+                        char in string.ascii_letters or is_chinese(char) or char == "·" or char == " "
+                    ):
+                        failed_students_list.append(
+                            (
+                                student[1],
+                                f"学生名字 {student[1]} 含有非法字符 “{char}”！",
+                            )
+                        )
+                        failed_count += 1
+                        char_failed = True
+                        break
+                if char_failed:
+                    continue
                 # 检查学号是否已存在，避免重复
                 tmp_user = query_user_info(key="number", content=str(student[0]))
                 user = tmp_user if tmp_user.id.decode() != "" else None
@@ -1142,12 +1223,16 @@ def teacher_delete_students() -> Response:
             if not delete_user_data(student_id):
                 # 如果删除操作失败，抛出异常并包含失败的学生ID
                 raise Exception(f"学生 {student_id} 删除失败！")
-        students_scores_to_delete = [item for item in query_scores_info_all(999, key="user_id", content=student_id) if item.id.decode() != ""]
+        students_scores_to_delete = [
+            item
+            for item in query_scores_info_all(999, key="user_id", content=student_id)
+            if item.id.decode() != ""
+        ]
         for score in students_scores_to_delete:
             if not delete_score_data(score.id.decode()):
                 # 如果删除操作失败，抛出异常并包含失败的成绩
                 raise Exception(f"成绩 {score.id.decode()} 删除失败！")
-            
+
         # 如果所有删除操作成功，构建成功的响应体
         body = {"success": True, "msg": "删除学生成功！"}
         return jsonify(body)
@@ -1253,15 +1338,42 @@ def teacher_modify_student() -> Response:
     # 获取请求中的表单数据
     data = request.form
     student_id = data.get("studentId")  # 获取要修改的学生ID
-    if not all([data.get("studentId"), data.get("name"), data.get("className"), data.get("number"), data.get("resetPassword")]):
+    if not all(
+        [
+            data.get("studentId"),
+            data.get("name"),
+            data.get("className"),
+            data.get("number"),
+            data.get("resetPassword"),
+        ]
+    ):
         body = {"success": False, "msg": "请填写完整的学生信息！"}
+    print(data, c_strlen(data.get("className")))
     # 查询当前学生的信息
     student_records = query_users_info_all(1, key="id", content=student_id)
     if not student_records:
         # 如果未找到指定ID的学生，返回错误消息
         body = {"success": False, "msg": f"未找到ID为 {student_id} 的学生！"}
         return jsonify(body)
-
+    # 检验名字的字符数组长度是否大于45
+    if c_strlen(data.get("name")) > 45:
+        body = {
+            "success": False,
+            "msg": f"学生名字长度过长（{c_strlen(data.get('name'))} 字符），请检查名字是否错误！",
+        }
+        return jsonify(body)
+    # 校验班级名称长度是否大于30
+    if c_strlen(data.get("className")) > 30:
+        body = {
+            "success": False,
+            "msg": f"班级名称长度过长（{c_strlen(data.get('className'))} 字符），请检查输入！",
+        }
+        return jsonify(body)
+    # 校验名字是否为ascii.printable或者中文
+    for char in data.get("name"):
+        if not (char in string.ascii_letters or is_chinese(char) or char == "·" or char == " "):
+            body = {"success": False, "msg": f'学生名字中的 "{char}" 字符不合法！'}
+            return jsonify(body)
     student = student_records[0]  # 获取查询到的学生记录
 
     try:
@@ -1282,7 +1394,13 @@ def teacher_modify_student() -> Response:
         )
 
         # 检查新的学号是否已存在且不属于当前学生
-        existing_user = [item for item in query_users_info_all(999, key="number", content=data.get("number")) if item.id.decode() != "" and item.id.decode() != student_id]
+        existing_user = [
+            item
+            for item in query_users_info_all(
+                999, key="number", content=data.get("number")
+            )
+            if item.id.decode() != "" and item.id.decode() != student_id
+        ]
         if existing_user:
             if existing_user[0].id.decode() != student_id:
                 body = {
@@ -1322,38 +1440,39 @@ def teacher_modify_student() -> Response:
     # 返回JSON格式的响应
     return jsonify(body)
 
+
 @teacher_api_v1.route("/api/v1/teacher/exportScores", methods=["POST"])
 def teacher_export_score() -> Response:
     exam_id = request.json.get("examId")
     if not exam_id:
-        body = {
-            "success": False,
-            "msg": "未提供考试ID，无法导出数据！"
-        }
+        body = {"success": False, "msg": "未提供考试ID，无法导出数据！"}
     exam = query_exam_info(key="id", content=exam_id)
     if not exam:
-        body = {
-            "success": False,
-            "msg": "无法找到考试信息！"
-        }
+        body = {"success": False, "msg": "无法找到考试信息！"}
     token_data = jwt.decode(request.cookies.get("token"), JWT_KEY, algorithms=["HS256"])
     teacher_id = token_data.get("id")
     if not teacher_id:
-        body = {
-            "success": False,
-            "msg": "无法验证您的身份，请重新登陆！"
-        }
+        body = {"success": False, "msg": "无法验证您的身份，请重新登陆！"}
         return jsonify(body)
-    user = query_user_info(key="id", content=teacher_id) if query_user_info(key="id", content=teacher_id) else None
+    user = (
+        query_user_info(key="id", content=teacher_id)
+        if query_user_info(key="id", content=teacher_id)
+        else None
+    )
     if user:
         if user.role != 1:
-            body = {
-                "success": False,
-                "msg": "权限不足！"
-            }
+            body = {"success": False, "msg": "权限不足！"}
             return jsonify(body)
-    scores = [item for item in query_scores_info_all(999, key="exam_id", content=exam_id) if item.id.decode() != ""]
-    students = [item for item in query_users_info_all(999, key="belong_to", content=teacher_id) if item.id.decode() != ""]
+    scores = [
+        item
+        for item in query_scores_info_all(999, key="exam_id", content=exam_id)
+        if item.id.decode() != ""
+    ]
+    students = [
+        item
+        for item in query_users_info_all(999, key="belong_to", content=teacher_id)
+        if item.id.decode() != ""
+    ]
     student_scores = []
     for student in students:
         # 获取学生成绩
@@ -1369,16 +1488,15 @@ def teacher_export_score() -> Response:
                 "id": student.number,
                 "name": student.name.decode(),
                 "score": current_score,
-                "expired": expired
+                "expired": expired,
             }
         )
-        
+
     stream = generate_score_report(student_scores)
 
     return send_file(
         stream,
         as_attachment=True,
         download_name=f"{exam.name.decode()}考试成绩导出.xlsx",
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
-    

@@ -159,21 +159,6 @@ def students_xlsx_parser(raw_data: bytes) -> list:
             student_class = str(student_class)
             if not all([number, name, student_class, password]):
                 break
-            if int(number) > 4294967295 or int(number) <= 0:
-                print(
-                    f"第{row_idx}行：学号不符合要求，跳过此行数据 {number}, {name}, {student_class}, {password}"
-                )
-                continue
-            if c_strlen(name) > 45:
-                print(
-                    f"第{row_idx}行：姓名长度不符合要求，跳过此行数据 {number}, {name}, {student_class}, {password}"
-                )
-                continue
-            if c_strlen(student_class) > 30:
-                print(
-                    f"第{row_idx}行：班级长度不符合要求，跳过此行数据 {number}, {name}, {student_class}, {password}"
-                )
-                continue
             results.append((int(number), name, student_class, password))
         except Exception as e:
             print(f"第{row_idx}行：发生错误: {e}")
@@ -242,3 +227,19 @@ def generate_score_report(student_score_list: List[Dict]) -> BytesIO:
     stream.seek(0)           # 将指针移动到流的开头，以便后续读取
 
     return stream            # 返回包含Excel数据的二进制流
+
+def is_chinese(char: str) -> bool:
+    code_point = ord(char)
+    if (
+            0x4E00 <= code_point <= 0x9FFF  # CJK统一汉字
+            or 0x3400 <= code_point <= 0x4DBF  # CJK统一汉字扩展A
+            or 0x20000 <= code_point <= 0x2A6DF  # CJK统一汉字扩展B
+            or 0x2A700 <= code_point <= 0x2B73F  # CJK统一汉字扩展C
+            or 0x2B740 <= code_point <= 0x2B81F  # CJK统一汉字扩展D
+            or 0x2B820 <= code_point <= 0x2CEAF  # CJK统一汉字扩展E
+            or 0xF900 <= code_point <= 0xFAFF  # CJK兼容汉字
+            or 0x2F800 <= code_point <= 0x2FA1F  # CJK兼容汉字补充
+        ):
+        return True
+    else:
+        return False
