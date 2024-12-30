@@ -159,7 +159,7 @@ def students_xlsx_parser(raw_data: bytes) -> list:
             student_class = str(student_class)
             if not all([number, name, student_class, password]):
                 break
-            results.append((int(number), name, student_class, password))
+            results.append((number, name, student_class, password))
         except Exception as e:
             print(f"第{row_idx}行：发生错误: {e}")
             continue

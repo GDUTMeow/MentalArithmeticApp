@@ -173,8 +173,8 @@ Execute-Step -StepName "编译 Flask 服务器组件" -StepScript {
     --windows-icon-from-ico=ui/static/img/favicon.ico `
     --windows-company-name=GamerNoTitle `
     --windows-product-name="口算速算 MentalArithmeticApp" `
-    --windows-file-version=1.3 `
-    --windows-product-version=1.3 `
+    --windows-file-version=1.4 `
+    --windows-product-version=1.4 `
     --lto=yes --assume-yes-for-downloads ui/app.py
 }
 

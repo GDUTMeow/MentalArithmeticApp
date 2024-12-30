@@ -1028,6 +1028,12 @@ def teacher_add_students() -> Response:
             ):
                 body = {"success": False, "msg": "请填写完整的学生信息！"}
                 return jsonify(body)
+            # 验证学号是否为全数字
+            if not student.get("number").isdigit():
+                body = {
+                    "success": False,
+                    "msg": "学号必须为纯数字！"
+                }
             # 验证学号是否在合法范围内
             if (
                 int(student.get("number")) < 0
@@ -1114,7 +1120,13 @@ def teacher_add_students() -> Response:
             for (
                 student
             ) in students:  # 每个学生的结构为：[number, name, class_name, password]
-                if student[0] > 4294967295 or student[0] <= 0:
+                if not student[0].isdigit():
+                    failed_students_list.append(
+                        (student[1], f"学号 {student[0]} 不是数字。")
+                    )
+                    failed_count += 1
+                    continue
+                if int(student[0]) > 4294967295 or int(student[0]) <= 0:
                     failed_students_list.append(
                         (student[1], f"学号 {student[0]} 不符合要求。")
                     )
@@ -1348,7 +1360,6 @@ def teacher_modify_student() -> Response:
         ]
     ):
         body = {"success": False, "msg": "请填写完整的学生信息！"}
-    print(data, c_strlen(data.get("className")))
     # 查询当前学生的信息
     student_records = query_users_info_all(1, key="id", content=student_id)
     if not student_records:
@@ -1375,7 +1386,13 @@ def teacher_modify_student() -> Response:
             body = {"success": False, "msg": f'学生名字中的 "{char}" 字符不合法！'}
             return jsonify(body)
     student = student_records[0]  # 获取查询到的学生记录
-
+    # 验证学号是否为纯数字
+    if not data.get("number").isdigit():
+        body = {
+            "success": False,
+            "msg": "学号必须为纯数字！"
+        }
+        return jsonify(body)
     try:
         # 验证学号是否在合法范围内
         student_number = int(data.get("number"))
