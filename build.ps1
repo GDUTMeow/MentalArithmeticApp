@@ -173,13 +173,8 @@ Execute-Step -StepName "编译 Flask 服务器组件" -StepScript {
     --windows-icon-from-ico=ui/static/img/favicon.ico `
     --windows-company-name=GamerNoTitle `
     --windows-product-name="口算速算 MentalArithmeticApp" `
-<<<<<<< HEAD
     --windows-file-version=1.4 `
     --windows-product-version=1.4 `
-=======
-    --windows-file-version=1.0 `
-    --windows-product-version=1.0 `
->>>>>>> parent of 5265bf4 (feat: add more msg when modifying an exam)
     --lto=yes --assume-yes-for-downloads ui/app.py
 }
 
