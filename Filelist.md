@@ -1,6 +1,6 @@
 # 文件作用说明文档
 
-```
+```shell
 MentalArithmeticApp/
 ├── include/                            # 自定义头文件
 │   ├── app.c                           # 判题逻辑、分数计算逻辑以及题目链表生成逻辑

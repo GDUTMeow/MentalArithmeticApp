@@ -61,7 +61,7 @@
                         <!--Section heading-->
                         <h2 class="h1-responsive font-weight-bold text-center my-4">添加学生</h2>
                         <!--Section description-->
-                        <p class="text-center w-responsive mx-auto mb-5">请在下方输入学生的相关信息并导入CSV文件</p>
+                        <p class="text-center w-responsive mx-auto mb-5">请在下方输入学生的相关信息或者导入学生信息文件</p>
                         <div class="form-floating mb-4">
                             <input type="text" id="student-name" class="form-control" />
                             <label class="form-label" for="student-name">学生姓名</label>
@@ -98,7 +98,7 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <input type="file" id="student-xlsx-file" style="display: none;" accept=".xlsx">
-                                    <button type="button" class="btn btn-primary btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;" id="student-add-import-file" onclick="importStudentXlsxFile()"> 导入CSV </button>
+                                    <button type="button" class="btn btn-primary btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;" id="student-add-import-file" onclick="importStudentXlsxFile()"> 导入学生信息 </button>
                                 </div>
                                 <div class="col-md-6">
                                     <button type="button" class="btn btn-success btn-rounded btn-lg" data-mdb-ripple-color="#ffffff" style="padding-left: 10px; padding-right: 10px; width: 95%;" id="student-add-confirm" disabled onclick="addStudents()"> 确定导入 </button>
