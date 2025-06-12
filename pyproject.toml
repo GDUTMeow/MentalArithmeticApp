@@ -1,0 +1,13 @@
+[project]
+name = "mentalarithmeticapp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "colorlog>=6.9.0",
+    "flask>=3.1.1",
+    "nuitka>=2.7.7",
+    "openpyxl>=3.1.5",
+    "pyjwt>=2.10.1",
+]
