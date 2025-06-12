@@ -1120,7 +1120,7 @@ def teacher_add_students() -> Response:
             for (
                 student
             ) in students:  # 每个学生的结构为：[number, name, class_name, password]
-                if not student[0].isdigit():
+                if not isinstance(student[0], int):
                     failed_students_list.append(
                         (student[1], f"学号 {student[0]} 不是数字。")
                     )
